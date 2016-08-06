@@ -27,7 +27,7 @@
 	
 	scene = new THREE.Scene();
 	
-	camera = new THREE.PerspectiveCamera( 45, CANVAS_WIDTH / CANVAS_HEIGHT, 0.1, 1000 );
+	camera = new THREE.PerspectiveCamera( 45, CANVAS_WIDTH / CANVAS_HEIGHT, 1, 1000 );
 	
 	renderer = new THREE.WebGLRenderer();
 	renderer.setClearColor(0xf8f8f8, 1.0);
@@ -48,9 +48,9 @@ function init(){
 	$.getJSON( "envelope.json", function(json){ myJson = json; });
 
 //	Camera posizione verso il centro della scena
-	camera.position.x = 15;
-	camera.position.y = 8;
-	camera.position.z = 15;
+	camera.position.x = 0;
+	camera.position.y = 0;
+	camera.position.z = CANVAS_WIDTH;
 	camera.lookAt( scene.position );
 	
 //	Setup del sistema particellare
@@ -119,16 +119,17 @@ function control() {
 function setupPointsSystem(width, height) {
 	var dots;
 	
+	for (var i = 0; i < width; i++){
+	
 	var dotGeometry = new THREE.Geometry();
-	dotGeometry.vertices.push(new THREE.Vector3( 0, 0, 0));
-	var dotMaterial = new THREE.PointsMaterial( { size: 100, sizeAttenuation: false } );
+	dotGeometry.vertices.push(new THREE.Vector3( i-width/2, 0, 0));
+	var dotMaterial = new THREE.PointsMaterial( {color: 0x000000, size: 1, sizeAttenuation: false } );
 	var dot = new THREE.Points( dotGeometry, dotMaterial );
-	dot.name = 'dot';
+	dot.name = 'dot'+i;
 	dotGeometry.needsUpdate = true;
 	scene.add( dot );
+	}
 }
-
-var vis = false;
 
 function animate(){
 	if(!isPlay) return;
@@ -141,10 +142,10 @@ function animate(){
 }			
 
 function render() {
-	var dt = scene.getObjectByName('dot');
+	//var dt = scene.getObjectByName('dot');
 	$('#test').html('<p> evento: ' + myJson.b[1] + ' </p>');
 	
-	dt.position.y = Math.random();
+	//dt.position.y = Math.random();
 	renderer.render( scene, camera );
 }
 
