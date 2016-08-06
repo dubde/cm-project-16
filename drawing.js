@@ -14,6 +14,7 @@
 	var camera;
 	var myJson;
 	var renderer;
+	var k = 0;
 	
 	scene = new THREE.Scene();
 	var nFrames = 200;
@@ -27,7 +28,7 @@
 	
 	scene = new THREE.Scene();
 	
-	camera = new THREE.PerspectiveCamera( 45, CANVAS_WIDTH / CANVAS_HEIGHT, 1, 1000 );
+	camera = new THREE.PerspectiveCamera( 90, CANVAS_WIDTH / CANVAS_HEIGHT, 1, 1000 );
 	
 	renderer = new THREE.WebGLRenderer();
 	renderer.setClearColor(0xf8f8f8, 1.0);
@@ -46,11 +47,12 @@ function init(){
 
 	//	Caricamento del file JSON di interesse
 	$.getJSON( "envelope.json", function(json){ myJson = json; });
-
+	//var nSamples = myJson.b.size();
+	
 //	Camera posizione verso il centro della scena
 	camera.position.x = 0;
 	camera.position.y = 0;
-	camera.position.z = CANVAS_WIDTH;
+	camera.position.z = CANVAS_WIDTH/3;
 	camera.lookAt( scene.position );
 	
 //	Setup del sistema particellare
@@ -65,9 +67,7 @@ function init(){
 //	Sistema di controllo start/stop
 	control();
 	
-//	Grafico
-	
-	//setupGraphic();
+	//graphic();
 }
 			
 
@@ -137,50 +137,43 @@ function animate(){
 	setTimeout( function(){
 	
 	requestAnimationFrame( animate );
-	}, 1000 / 1);
+	}, 1000 / 30);
 	render();
 }			
 
+
 function render() {
-	//var dt = scene.getObjectByName('dot');
-	$('#test').html('<p> evento: ' + myJson.b[1] + ' </p>');
+	//$('#test').html('<p> evento: ' + myJson.b[1] + ' </p>');
 	
-	//dt.position.y = Math.random();
+	graphic();
+	k++;
 	renderer.render( scene, camera );
 }
 
 //	Generazione del movimento delle barre
-// Generatore del movimento da seguire
-	/*
-	//states[nFrames-1] = (CANVAS_HEIGHT*5) * Math.sin(k*(180/Math.PI));
+
+function graphic(){
+	//var newPos = (CANVAS_HEIGHT/3) * Math.sin(k*(180/Math.PI));
+	var newPos = (CANVAS_HEIGHT) * myJson.b[k+nSamples/44100];
 	
-	//states[nFrames-1] = (CANVAS_HEIGHT/100)  * myJson.b[k];
-	
-	//il movimento viene seguito dalle barre
-	
-	//group[nFrames-1].scale.y =  states[nFrames-1];
-	
-	for(i=0; i < nFrames-1; i++)
-	{
-		states[i] = states[i+1];
-		//group[i].position.y += states[i];
-		group[i].scale.y = states[i];
+	for( var i = 0; i < CANVAS_WIDTH-1; i++){
+	var first = scene.getObjectByName('dot'+i);
+	var f = i+1;
+	var second = scene.getObjectByName('dot'+f);
+	$('#test').html('<p> oggetto: ' + first.name + ' </p>');
+	first.position.y = second.position.y;
 	}
-	k +=1;
-	if ( k > myJson.b.length) k = 0;
-	*/
-function setupGraphic(){
-	var geom = ps.geometry;
-	var ps = scene.getObjectByName('ps');
-	
+	second.position.y = newPos;
+	$('#test').html('<p> newPos: ' + newPos + ' </p>');
+	/*
 	for(var i = 0; i < myJson.b.length ; i++){
 		if (geom.vertices[i]){
-			geom.vertices[i].y = myJson.b[i] * 1000;
 			geom.colors[i] = new THREE.Color(scale(myJson.b[i]).hex());
 		}
 	}
 	ps.sortParticles = true;
-	geom.verticesNeedUpdate = true;
+	*/
+	//geom.verticesNeedUpdate = true;
 }
 
 window.onload = init;
