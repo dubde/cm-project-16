@@ -29,7 +29,7 @@ songs(file) = temp_s;
 end
 
 % per estrarre i valori numerici devo usare mirgetdata
-
+ave = mirgetdata( songs(1).
 % una volta estratti in numerico posso convertirli in JSON
 
 %% Esempio conversione Json
