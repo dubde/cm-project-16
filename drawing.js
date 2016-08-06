@@ -1,104 +1,81 @@
-// Fix JSON
-$.ajaxSetup({beforeSend: function(xhr){
-  if (xhr.overrideMimeType)
-  {
-    xhr.overrideMimeType("application/json");
-  }
-}
-});
+// Fix JSON per lavorare senza server online e caricare i files JSON
+	$.ajaxSetup({beforeSend: function(xhr){
+		if (xhr.overrideMimeType)
+			{
+				xhr.overrideMimeType("application/json");
+			}
+		}
+	});
 	
-/* Fix transport variabile
-		var Francesco;
-		$.getJSON( "envelope.json", function(json){ $( '#test').html('<p> b[1]:' + json.b[12] + '</p>'); 
-												Francesco = json;
-													$( '#test').append('<p> Fra.b[12]:' + Francesco.b[12] + '</p>');});
-*/	
-	var scene = new THREE.Scene();
-	var nFrames = 200;
-	var group = [];
+//	Variabili globali
+	
+	var renderer;
+	var scene;
+	var camera;
 	var myJson;
-	$.getJSON( "envelope.json", function(json){ myJson = json; });
-	//var obj = JSON.parse("envelope.json"); // anche col fix da syntax error del file json
+	var renderer;
 	
+	scene = new THREE.Scene();
+	var nFrames = 200;
 	
+//	Palette cromatica
+	var scale = chroma.scale(['orange','red','white']).domain([0,255]);
 	
-	var CANVAS_WIDTH = 640;
-	var CANVAS_HEIGHT = 480;
+	var CANVAS_WIDTH = 300;
+	var CANVAS_HEIGHT = 200;
+
 	
-	var container = document.getElementById( 'canvas' );
-	document.body.appendChild( container );
+	scene = new THREE.Scene();
 	
-	var renderer = new THREE.WebGLRenderer();
+	camera = new THREE.PerspectiveCamera( 45, CANVAS_WIDTH / CANVAS_HEIGHT, 0.1, 1000 );
+	
+	renderer = new THREE.WebGLRenderer();
+	renderer.setClearColor(0xf8f8f8, 1.0);
 	renderer.setSize( CANVAS_WIDTH, CANVAS_HEIGHT);
-	container.appendChild( renderer.domElement );
 	
-/* div canvas */
-	
-	
-	;
-	
-	var camera = new THREE.PerspectiveCamera( 48, CANVAS_WIDTH / CANVAS_HEIGHT, 0.1, 1000 );
-	camera.position.z = 500;
-	camera.lookAt( scene.position );
-			
-		/*	window.addEventListener('resize', function() {
-			var WIDTH = window.innerWidth,
-				HEIGHT = window.innerHeight;
-			renderer.setSize(WIDTH, HEIGHT);
-			camera.aspect = WIDTH / HEIGHT;
-			camera.updateProjectionMatrix();
-			});
-		*/
-			/*oggetti 3D  
-			var geometry = new THREE.BoxGeometry( CANVAS_WIDTH / nFrames, 0.1, 0.1 );
-			var material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
-			var cube = new THREE.Mesh( geometry, material );
-			
-			for (i=0; i < nFrames; i+=1) {
-					mesh = cube.clone();
-					mesh.position.set(i*(CANVAS_WIDTH/nFrames) - (CANVAS_WIDTH/2)+1,0,0);
-					group[i] = mesh;
-			scene.add( group[i]);
-			}
-			*/
-			
-			
-/* Linee ma non viene bello..		*/
-var material = new THREE.LineDashedMaterial({
-	color: 0xffffff,
-	dashSize: 1,
-	gapSize: 0.5
-});
-
-var geometry = new THREE.Geometry();
-geometry.vertices.push(
-	new THREE.Vector3( 0, 1, 0 ),
-	new THREE.Vector3( 0, 0, 0 )
-);
-
-var line = new THREE.Line( geometry, material );
-
-
-for (i=0; i < nFrames; i+=1) {
-					mesh = line.clone();
-					mesh.position.set((i-nFrames/2)/10,0,0);
-					group[i] = mesh;
-			scene.add( group[i]);
-			}
-
-			
-			
-var states = [];
-	for(i=0; i < nFrames; i++)
-	{ states[i] = 0;}
-var k = 0;		
-
-/* Start - Stop animation
-			
- // Boolean for start and restart
+ // Boolean per start/stop
  var initAnim = true;
  var runAnim = false;
+ var isPlay = false;
 
+	
+//	Inizializzazione della scena
+	
+function init(){
+	
+
+	//	Caricamento del file JSON di interesse
+	$.getJSON( "envelope.json", function(json){ myJson = json; });
+
+//	Camera posizione verso il centro della scena
+	camera.position.x = 15;
+	camera.position.y = 8;
+	camera.position.z = 15;
+	camera.lookAt( scene.position );
+	
+//	Setup del sistema particellare
+	setupPointsSystem(CANVAS_WIDTH,CANVAS_HEIGHT);
+	
+	
+//	Aggiungo l'output all'elemento HTML
+	var container = document.getElementById( 'canvas' );
+	container.appendChild( renderer.domElement );
+	document.body.appendChild( container );
+	
+//	Sistema di controllo start/stop
+	control();
+	
+//	Grafico
+	
+	//setupGraphic();
+}
+			
+
+			
+//	Start/Stop
+			
+function control() {
+	
  // Buttons startButton and resetButton
  var startButton = document.getElementById( 'startButtonId' );
  var resetButton = document.getElementById( 'resetButtonId' );
@@ -108,17 +85,19 @@ var k = 0;
 
   if (initAnim) {
     initAnim = false;
-    runAnim = true;
-    theta = 0;
+    runAnim = true; 
   }
+  
   // Start and Pause 
   if (runAnim) {
     startButton.innerHTML = 'Pause';
     runAnim = false;
-    render();
+    isPlay = true;
+	animate();
     } else {
           startButton.innerHTML = 'Restart';
           runAnim = true;
+		  isPlay = false;
     }
   }
 
@@ -131,38 +110,54 @@ var k = 0;
    // Boolean for Stop Animation
    initAnim = true;
    runAnim = false;
-
+	isPlay = false;
+	render();
    }
-*/
-	
-	
-animate();
+}
 
+//	Creo i punti del grafico
+function setupPointsSystem(width, height) {
+	var dots;
+	
+	var dotGeometry = new THREE.Geometry();
+	dotGeometry.vertices.push(new THREE.Vector3( 0, 0, 0));
+	var dotMaterial = new THREE.PointsMaterial( { size: 100, sizeAttenuation: false } );
+	var dot = new THREE.Points( dotGeometry, dotMaterial );
+	dot.name = 'dot';
+	dotGeometry.needsUpdate = true;
+	scene.add( dot );
+}
 
+var vis = false;
 
 function animate(){
-	//if(!isPlay) return;
+	if(!isPlay) return;
 	
 	setTimeout( function(){
 	
 	requestAnimationFrame( animate );
-	}, 1000 / 100);
+	}, 1000 / 1);
 	render();
-
 }			
 
 function render() {
+	var dt = scene.getObjectByName('dot');
+	$('#test').html('<p> evento: ' + myJson.b[1] + ' </p>');
 	
+	dt.position.y = Math.random();
+	renderer.render( scene, camera );
+}
 
-	// Generatore del movimento da seguire
-	
+//	Generazione del movimento delle barre
+// Generatore del movimento da seguire
+	/*
 	//states[nFrames-1] = (CANVAS_HEIGHT*5) * Math.sin(k*(180/Math.PI));
 	
-	states[nFrames-1] = (CANVAS_HEIGHT/100)  * myJson.b[k];
+	//states[nFrames-1] = (CANVAS_HEIGHT/100)  * myJson.b[k];
 	
 	//il movimento viene seguito dalle barre
-	//group[nFrames-1].position.y += states[nFrames-1];
-	group[nFrames-1].scale.y =  states[nFrames-1];
+	
+	//group[nFrames-1].scale.y =  states[nFrames-1];
 	
 	for(i=0; i < nFrames-1; i++)
 	{
@@ -171,10 +166,20 @@ function render() {
 		group[i].scale.y = states[i];
 	}
 	k +=1;
-	//if ( k > myJson.b.length) k = 0;
+	if ( k > myJson.b.length) k = 0;
+	*/
+function setupGraphic(){
+	var geom = ps.geometry;
+	var ps = scene.getObjectByName('ps');
 	
-	$('#test').html('<p> evento: ' + myJson.b[k] + ' </p>');
-	geometry.needsUpdate = true;
-	
-	renderer.render( scene, camera );
+	for(var i = 0; i < myJson.b.length ; i++){
+		if (geom.vertices[i]){
+			geom.vertices[i].y = myJson.b[i] * 1000;
+			geom.colors[i] = new THREE.Color(scale(myJson.b[i]).hex());
+		}
+	}
+	ps.sortParticles = true;
+	geom.verticesNeedUpdate = true;
 }
+
+window.onload = init;
