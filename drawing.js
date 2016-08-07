@@ -12,7 +12,7 @@
 	var renderer;
 	var scene;
 	var camera;
-	var myJson;
+	var dataJSON;
 	var renderer;
 	var k = 0;
 	
@@ -39,15 +39,15 @@
  var runAnim = false;
  var isPlay = false;
 
+//	Caricamento del file JSON di interesse
+	$.getJSON( "envelope.json", function(json){ dataJSON = json.b; });
 	
 //	Inizializzazione della scena
 	
 function init(){
 	
 
-	//	Caricamento del file JSON di interesse
-	$.getJSON( "envelope.json", function(json){ myJson = json; });
-	//var nSamples = myJson.b.size();
+	
 	
 //	Camera posizione verso il centro della scena
 	camera.position.x = 0;
@@ -56,7 +56,7 @@ function init(){
 	camera.lookAt( scene.position );
 	
 //	Setup del sistema particellare
-	setupPointsSystem(CANVAS_WIDTH,CANVAS_HEIGHT);
+	setupLinesSystem(CANVAS_WIDTH,CANVAS_HEIGHT);
 	
 	
 //	Aggiungo l'output all'elemento HTML
@@ -64,10 +64,11 @@ function init(){
 	container.appendChild( renderer.domElement );
 	document.body.appendChild( container );
 	
+//	Info File
+	info();
+	
 //	Sistema di controllo start/stop
 	control();
-	
-	//graphic();
 }
 			
 
@@ -111,23 +112,22 @@ function control() {
    initAnim = true;
    runAnim = false;
 	isPlay = false;
+	k = 0;
 	render();
    }
 }
 
 //	Creo i punti del grafico
-function setupPointsSystem(width, height) {
-	var dots;
-	
+function setupLinesSystem(width, height) {	
 	for (var i = 0; i < width; i++){
-	
-	var dotGeometry = new THREE.Geometry();
-	dotGeometry.vertices.push(new THREE.Vector3( i-width/2, 0, 0));
-	var dotMaterial = new THREE.PointsMaterial( {color: 0x000000, size: 1, sizeAttenuation: false } );
-	var dot = new THREE.Points( dotGeometry, dotMaterial );
-	dot.name = 'dot'+i;
-	dotGeometry.needsUpdate = true;
-	scene.add( dot );
+		var lineGeometry = new THREE.Geometry();
+		lineGeometry.vertices.push(new THREE.Vector3( i-width/2, 0, 0));
+		lineGeometry.vertices.push(new THREE.Vector3( i-width/2, 1, 0));
+		var lineMaterial = new THREE.LineBasicMaterial( {color: 0x000000, linewidth: 1, linecap: 'square' } );
+		var line = new THREE.Line( lineGeometry, lineMaterial );
+		line.name = 'line'+i;
+		lineGeometry.needsUpdate = true;
+		scene.add( line );
 	}
 }
 
@@ -137,16 +137,22 @@ function animate(){
 	setTimeout( function(){
 	
 	requestAnimationFrame( animate );
-	}, 1000 / 30);
+	}, 1000 / 200);
 	render();
 }			
 
 
 function render() {
-	//$('#test').html('<p> evento: ' + myJson.b[1] + ' </p>');
+	//$('#test').html('<p> evento: ' + dataJSON.b[1] + ' </p>');
 	
 	graphic();
 	k++;
+	
+	if (isNaN(dataJSON[k])) 
+	{
+		$('#info').html('<p> length file: '+ k + '  </p>');
+		ResetParameters();
+	}
 	renderer.render( scene, camera );
 }
 
@@ -154,26 +160,24 @@ function render() {
 
 function graphic(){
 	//var newPos = (CANVAS_HEIGHT/3) * Math.sin(k*(180/Math.PI));
-	var newPos = (CANVAS_HEIGHT) * myJson.b[k+nSamples/44100];
+	var newPos = (CANVAS_HEIGHT) * dataJSON[k];
 	
 	for( var i = 0; i < CANVAS_WIDTH-1; i++){
-	var first = scene.getObjectByName('dot'+i);
+	var first = scene.getObjectByName('line'+i);
 	var f = i+1;
-	var second = scene.getObjectByName('dot'+f);
-	$('#test').html('<p> oggetto: ' + first.name + ' </p>');
-	first.position.y = second.position.y;
+	var second = scene.getObjectByName('line'+f);
+	first.scale.y = second.scale.y;
 	}
-	second.position.y = newPos;
-	$('#test').html('<p> newPos: ' + newPos + ' </p>');
-	/*
-	for(var i = 0; i < myJson.b.length ; i++){
-		if (geom.vertices[i]){
-			geom.colors[i] = new THREE.Color(scale(myJson.b[i]).hex());
-		}
-	}
-	ps.sortParticles = true;
-	*/
-	//geom.verticesNeedUpdate = true;
+	second.scale.y = newPos;
+
+	$('#test').html('<p> newVal: ' + newPos + ' </p>');
+}
+
+// Info del File
+
+function info(){
+
+	
 }
 
 window.onload = init;
