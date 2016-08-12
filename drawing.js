@@ -38,6 +38,7 @@
 	var nTracks = 1; // dataJSON.length
 	var nFrames = 60; // dataJSON.sampling? posso fare 60 aggiornamenti al secondo ma devo avere dei dati sotto campionati
 	var trackId = 0;
+	var trackScale = 1;
 	var k = 0;
  
 //	Caricamento del file JSON di interesse
@@ -192,30 +193,35 @@ function render() {
 //	Generazione del movimento delle barre
 
 function graphic(){
-	//var newPos = (CANVAS_HEIGHT/3) * Math.sin(k*(180/Math.PI));
 	
+//	Fine traccia fermati
 	if (k + 1 > dataJSON[trackId].awe.length) 
 	{
 		isPlay = false;
 		k=0;
-
 	}
-	
+
+//	Se in pausa non cambi la rappresentazione
 	if(!isPlay) return;
 	
 	k++;
+//	Fattore di scala
+
+	trackScale = dataJSON[trackId].awe.max();
+	console.log('scala: ' + trackScale);
+	var newPos = Math.round((CANVAS_HEIGHT) * dataJSON[trackId].awe[k]/trackScale);
 	
-	var newPos = (CANVAS_HEIGHT)* 150 * dataJSON[trackId].awe[k];
 	if (Math.abs(newPos) < 1) newPos = 1;
-	for( var i = 0; i < CANVAS_WIDTH-1; i++){
-	var first = scene.getObjectByName('line'+i);
-	var f = i+1;
-	var second = scene.getObjectByName('line'+f);
-	first.scale.y = second.scale.y;
+	
+	for( var i = 0; i < CANVAS_WIDTH-1; i++)
+	{
+		var first = scene.getObjectByName('line'+i);
+		var second = scene.getObjectByName('line'+(i+1));
+		first.scale.y = second.scale.y;
 	}
 	second.scale.y = newPos;
 
-	//$('#test').html('<p>j['+ k + '] = '+ dataJSON[trackId].awe[k] +' => ' + newPos + ' </p>');
+	
 }
 
 // Info del File
