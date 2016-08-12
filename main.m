@@ -17,6 +17,7 @@ close all
 % corrente, ma dato che mi da problemi ( doubble to struct) ho implementato
 % la mia ricerca all'interno della cartella. 
 
+%% Test - 1
 
 cd('tests');
 %cd('audio');
@@ -29,7 +30,7 @@ for file = 1:length(files)
 % ricampionare in quanto otterrei dei valori troppo precisi per la
 % riproduzione grafica, diciamo che 100 campioni al secondo mi basteranno.
     
-    temp_a = miraudio(files(file).name,'Center','Normal','Label',0);
+    temp_a = miraudio(files(file).name,'Normal','Label',0);
     
 %% Informazioni da Estrarre
 % posso estrarre l'audiowave(miraudio), lo spettro (mirspectrum),
@@ -43,14 +44,17 @@ for file = 1:length(files)
 % pezzo.
     
     
-    temp_pitch = mirpitch(temp_a);
-    temp_rms = mirrms(temp_a);
-    temp_rolloff = mirrolloff(temp_a);
-    temp_time = mirtempo(temp_a);
-    temp_a = miraudio(temp_a,'Sampling',200);
+    %temp_pitch = mirpitch(temp_a);
+    %temp_rms = mirrms(temp_a);
+    %temp_rolloff = mirrolloff(temp_a);
+    %temp_time = mirtempo(temp_a);
+    
+ % avere i dati a 44100 è troppo pesante per il browser da gestire come
+ % numero di campioni, quindi sottocampiono a 60.
+    temp_a = miraudio(temp_a,'Sampling',60);
     temp_spec = mirspectrum(temp_a,'Min',20,'Max',18000);
-    temp_peaks = mirpeaks(temp_a);
-    temp_onset = mironsets(temp_a);
+    %temp_peaks = mirpeaks(temp_a);
+    %temp_onset = mironsets(temp_a);
     
 %% Get Data
 % per ottenere i dati salvati negli oggetti mirtoolbox devo usare o
@@ -61,8 +65,11 @@ for file = 1:length(files)
 % Name = il nome del file
 % ave = mirgetdata();
 
-temp_s = struct('title', get(temp_a,'Label'),'awe', mirgetdata(temp_a),'spectrum', mirgetdata(temp_spec),'peaks', mirgetdata(temp_peaks),'rms', mirgetdata(temp_rms),'onsets', mirgetdata(temp_onset),'rolloff', mirgetdata(temp_rolloff),'tempo', mirgetdata(temp_time),'pitch', mirgetdata(temp_pitch));
+% non mi servono tutti questi per il primo test, ogni test ha il suo JSON,
+% struttura più leggera.
 
+%temp_s = struct('title', get(temp_a,'Label'),'awe', mirgetdata(temp_a),'spectrum', mirgetdata(temp_spec),'peaks', mirgetdata(temp_peaks),'rms', mirgetdata(temp_rms),'onsets', mirgetdata(temp_onset),'rolloff', mirgetdata(temp_rolloff),'tempo', mirgetdata(temp_time),'pitch', mirgetdata(temp_pitch));
+temp_s = struct('title', get(temp_a,'Label'),'awe', mirgetdata(temp_a),'spectrum', mirgetdata(temp_spec));
 tracks(file) = temp_s;
 end
 cd('../');
@@ -72,7 +79,14 @@ cd('json');
 % A = [1 2; 3 4];
 % savejson('A',A,'matriceA')
 
-savejson('tracks',tracks,'tracks.json');
+savejson('tracks',tracks,'1-tracks.json');
 
 cd('../');
+
+%% Test - 2
+
+%% Test - 3
+
+%% Test - 4
+
 disp('End of Analysis');

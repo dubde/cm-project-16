@@ -16,6 +16,8 @@
 	var renderer;
 	var CANVAS_WIDTH = 300;
 	var CANVAS_HEIGHT = 200;
+	var audio = document.getElementById("audio");
+	var songList = document.getElementById("songs");
 
 	//scene = new THREE.Scene();
 	
@@ -30,7 +32,7 @@
  var runAnim = false;
  var isPlay = false;
  
- var fileJSON = "json/tracks.json";
+ var fileJSON = "json/1-tracks.json";
 
  
 	var nTracks = 1; // dataJSON.length
@@ -56,8 +58,6 @@ $.getJSON( fileJSON, function(json){ dataJSON = json.tracks;
 //	Inizializzazione della scena
 	
 function init(){	
-// 	Setup Audio Files
-	audioLoad(dataJSON);
 	
 //	Setup del sistema particellare
 	setupLinesSystem(CANVAS_WIDTH,CANVAS_HEIGHT);
@@ -78,6 +78,7 @@ function init(){
 	console.log("html:ok");
 //  Tracce 
 	songs();
+
 	
 //	Info File
 	info();
@@ -86,9 +87,6 @@ function init(){
 	control();
 }
 			
-function audioLoad(tracce){
-	
-}
 			
 //	Start/Stop e traccia
 			
@@ -111,12 +109,15 @@ function control() {
     startButton.innerHTML = 'Pause';
     runAnim = false;
     isPlay = true;
+    audio.play();
 	animate();
-    } else {
+	} else {
           startButton.innerHTML = 'Restart';
           runAnim = true;
 		  isPlay = false;
+	audio.pause();
     }
+	
   }
 
  // Reset Button
@@ -127,12 +128,31 @@ function control() {
    
    // sistema le linee a offline
 	setupLinesSystem(CANVAS_WIDTH,CANVAS_HEIGHT);
-   // Boolean for Stop Animation
+   // Boolean for Stop Animatio
     initAnim = true;
     runAnim = false;
 	isPlay = false;
 	k = 0;
-   }
+	audio.pause();
+	audio.currentTime = 0;
+	}
+
+//	Select Song
+	songList.addEventListener("click",function(e){
+		selectSong(e.target.id);
+		// Set StartButton to Start  
+   startButton.innerHTML = 'Start';
+   
+   // sistema le linee a offline
+	setupLinesSystem(CANVAS_WIDTH,CANVAS_HEIGHT);
+   // Boolean for Stop Animatio
+    initAnim = true;
+    runAnim = false;
+	isPlay = false;
+	k = 0;
+	audio.pause();
+	audio.currentTime = 0;
+	});
 }
 
 //	Creo i punti del grafico
@@ -174,19 +194,19 @@ function render() {
 function graphic(){
 	//var newPos = (CANVAS_HEIGHT/3) * Math.sin(k*(180/Math.PI));
 	
-	
 	if (k + 1 > dataJSON[trackId].awe.length) 
 	{
 		isPlay = false;
 		k=0;
+
 	}
 	
 	if(!isPlay) return;
 	
 	k++;
 	
-	var newPos = (CANVAS_HEIGHT)* 20 * dataJSON[trackId].awe[k];
-	
+	var newPos = (CANVAS_HEIGHT)* 150 * dataJSON[trackId].awe[k];
+	if (Math.abs(newPos) < 1) newPos = 1;
 	for( var i = 0; i < CANVAS_WIDTH-1; i++){
 	var first = scene.getObjectByName('line'+i);
 	var f = i+1;
@@ -202,27 +222,27 @@ function graphic(){
 
 function info(){
 	$('#info').html('<p> File: '+ dataJSON[trackId].title + '  </p>');
-	//$('#info').append('<p> File: '+ dataJSON[trackId].title + '  </p>');	
-	console.log("info");
+	console.log('info traccia: ' + dataJSON[trackId].title);
+	console.log('length data:' + dataJSON[trackId].awe.length / 60);
 }
 
 function songs(){
-	$('#songs').html('<p> tracce: ' + nTracks +' </p>');
-	$('#songs').append('<ol type="1">')
+	console.log('tracce: ' + nTracks);
+	
 	for(i=0; i < nTracks; i++)
 	{
-		$('#songs').append('<li id="#track'+ i +'">' + dataJSON[i].title + '</li>' );
+		var title = dataJSON[i].title ;
+		songList.insertAdjacentHTML('beforeend','<li id="'+ i +'">' + title + '</li>' );
+		audio.insertAdjacentHTML('beforeend','<source src="tests/'+ title + '">');
 	}
-	$('#songs').append('</ol>');
-	//var songButton = document.getElementById( 'track2' );
-		//songButton.onclick = selectSong(2);
+	audio.load();
 }
 
 function selectSong(newTrack)
 {
 	var oldTrack = trackId;
-	ResetParameters();
-	$('#track'+newTrack).html('<li id="#track'+ newTrack +'" style="background-color: #FFEBCD;">' + dataJSON[newTrack].title + '</li>');
-	$('#track'+oldTrack).html('<li id="#track'+ oldTrack +'">' + dataJSON[oldTrack].title + '</li>');
+	audio.src = "tests/"+dataJSON[newTrack].title;	
+	audio.load();
 	trackId = newTrack;
+	info();
 }
