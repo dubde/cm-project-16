@@ -14,19 +14,10 @@
 	var camera;
 	var dataJSON;
 	var renderer;
-	var k = 0;
-	
-	scene = new THREE.Scene();
-	var nFrames = 200;
-	
-//	Palette cromatica
-	var scale = chroma.scale(['orange','red','white']).domain([0,255]);
-	
 	var CANVAS_WIDTH = 300;
 	var CANVAS_HEIGHT = 200;
 
-	
-	scene = new THREE.Scene();
+	//scene = new THREE.Scene();
 	
 	camera = new THREE.PerspectiveCamera( 90, CANVAS_WIDTH / CANVAS_HEIGHT, 1, 1000 );
 	
@@ -38,31 +29,55 @@
  var initAnim = true;
  var runAnim = false;
  var isPlay = false;
+ 
+ var fileJSON = "json/tracks.json";
 
+ 
+	var nTracks = 1; // dataJSON.length
+	var nFrames = 60; // dataJSON.sampling? posso fare 60 aggiornamenti al secondo ma devo avere dei dati sotto campionati
+	var trackId = 0;
+	var k = 0;
+ 
 //	Caricamento del file JSON di interesse
-	$.getJSON( "envelope.json", function(json){ dataJSON = json.b; });
+$.getJSON( fileJSON, function(json){ dataJSON = json.tracks; 
+						console.log("success");})
+						.done(function() {
+							nTracks = dataJSON.length;
+							console.log('file: '+ fileJSON +' tracce: ' + nTracks  + ' ');
+							init();
+						})
+						.fail(function(){
+							console.log("fallimento");
+						})
+						.always(function(){
+							console.log("completato");
+						});
 	
 //	Inizializzazione della scena
 	
-function init(){
+function init(){	
+// 	Setup Audio Files
+	audioLoad(dataJSON);
 	
-
-	
+//	Setup del sistema particellare
+	setupLinesSystem(CANVAS_WIDTH,CANVAS_HEIGHT);
+	console.log("linee: ok");
 	
 //	Camera posizione verso il centro della scena
 	camera.position.x = 0;
 	camera.position.y = 0;
 	camera.position.z = CANVAS_WIDTH/3;
 	camera.lookAt( scene.position );
-	
-//	Setup del sistema particellare
-	setupLinesSystem(CANVAS_WIDTH,CANVAS_HEIGHT);
-	
+	console.log("camera: ok");
 	
 //	Aggiungo l'output all'elemento HTML
-	var container = document.getElementById( 'canvas' );
+	var container = document.getElementById( 'canvas-1' );
 	container.appendChild( renderer.domElement );
-	document.body.appendChild( container );
+	//document.body.appendChild( container );
+	
+	console.log("html:ok");
+//  Tracce 
+	songs();
 	
 //	Info File
 	info();
@@ -71,9 +86,11 @@ function init(){
 	control();
 }
 			
-
+function audioLoad(tracce){
+	
+}
 			
-//	Start/Stop
+//	Start/Stop e traccia
 			
 function control() {
 	
@@ -107,18 +124,22 @@ function control() {
 
    // Set StartButton to Start  
    startButton.innerHTML = 'Start';
-
+   
+   // sistema le linee a offline
+	setupLinesSystem(CANVAS_WIDTH,CANVAS_HEIGHT);
    // Boolean for Stop Animation
-   initAnim = true;
-   runAnim = false;
+    initAnim = true;
+    runAnim = false;
 	isPlay = false;
 	k = 0;
-	render();
    }
 }
 
 //	Creo i punti del grafico
 function setupLinesSystem(width, height) {	
+	
+		scene = new THREE.Scene();
+		
 	for (var i = 0; i < width; i++){
 		var lineGeometry = new THREE.Geometry();
 		lineGeometry.vertices.push(new THREE.Vector3( i-width/2, 0, 0));
@@ -129,30 +150,22 @@ function setupLinesSystem(width, height) {
 		lineGeometry.needsUpdate = true;
 		scene.add( line );
 	}
+	animate();
 }
 
 function animate(){
-	if(!isPlay) return;
 	
 	setTimeout( function(){
 	
 	requestAnimationFrame( animate );
-	}, 1000 / 200);
+	}, 1000 / nFrames);
 	render();
 }			
 
 
 function render() {
-	//$('#test').html('<p> evento: ' + dataJSON.b[1] + ' </p>');
-	
 	graphic();
-	k++;
 	
-	if (isNaN(dataJSON[k])) 
-	{
-		$('#info').html('<p> length file: '+ k + '  </p>');
-		ResetParameters();
-	}
 	renderer.render( scene, camera );
 }
 
@@ -160,7 +173,19 @@ function render() {
 
 function graphic(){
 	//var newPos = (CANVAS_HEIGHT/3) * Math.sin(k*(180/Math.PI));
-	var newPos = (CANVAS_HEIGHT) * dataJSON[k];
+	
+	
+	if (k + 1 > dataJSON[trackId].awe.length) 
+	{
+		isPlay = false;
+		k=0;
+	}
+	
+	if(!isPlay) return;
+	
+	k++;
+	
+	var newPos = (CANVAS_HEIGHT)* 20 * dataJSON[trackId].awe[k];
 	
 	for( var i = 0; i < CANVAS_WIDTH-1; i++){
 	var first = scene.getObjectByName('line'+i);
@@ -170,14 +195,34 @@ function graphic(){
 	}
 	second.scale.y = newPos;
 
-	$('#test').html('<p> newVal: ' + newPos + ' </p>');
+	//$('#test').html('<p>j['+ k + '] = '+ dataJSON[trackId].awe[k] +' => ' + newPos + ' </p>');
 }
 
 // Info del File
 
 function info(){
-
-	
+	$('#info').html('<p> File: '+ dataJSON[trackId].title + '  </p>');
+	//$('#info').append('<p> File: '+ dataJSON[trackId].title + '  </p>');	
+	console.log("info");
 }
 
-window.onload = init;
+function songs(){
+	$('#songs').html('<p> tracce: ' + nTracks +' </p>');
+	$('#songs').append('<ol type="1">')
+	for(i=0; i < nTracks; i++)
+	{
+		$('#songs').append('<li id="#track'+ i +'">' + dataJSON[i].title + '</li>' );
+	}
+	$('#songs').append('</ol>');
+	//var songButton = document.getElementById( 'track2' );
+		//songButton.onclick = selectSong(2);
+}
+
+function selectSong(newTrack)
+{
+	var oldTrack = trackId;
+	ResetParameters();
+	$('#track'+newTrack).html('<li id="#track'+ newTrack +'" style="background-color: #FFEBCD;">' + dataJSON[newTrack].title + '</li>');
+	$('#track'+oldTrack).html('<li id="#track'+ oldTrack +'">' + dataJSON[oldTrack].title + '</li>');
+	trackId = newTrack;
+}
