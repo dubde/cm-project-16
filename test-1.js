@@ -36,9 +36,11 @@
 
  
 	var nTracks = 1; // dataJSON.length
-	var nFrames = 60; // dataJSON.sampling? posso fare 60 aggiornamenti al secondo ma devo avere dei dati sotto campionati
+	var nFrames = 30; // dataJSON.sampling? posso fare 60 aggiornamenti al secondo ma devo avere dei dati sotto campionati
 	var trackId = 0;
-	var trackScale = 1;
+	var trackLength = 0;
+	var trackFs = 200;
+	var track;
 	var k = 0;
  
 //	Caricamento del file JSON di interesse
@@ -62,28 +64,24 @@ function init(){
 	
 //	Setup del sistema particellare
 	setupLinesSystem(CANVAS_WIDTH,CANVAS_HEIGHT);
-	console.log("linee: ok");
+//	console.log("linee: ok");
 	
 //	Camera posizione verso il centro della scena
 	camera.position.x = 0;
 	camera.position.y = 0;
 	camera.position.z = CANVAS_WIDTH/3;
 	camera.lookAt( scene.position );
-	console.log("camera: ok");
+//	console.log("camera: ok");
 	
 //	Aggiungo l'output all'elemento HTML
 	var container = document.getElementById( 'canvas-1' );
 	container.appendChild( renderer.domElement );
 	//document.body.appendChild( container );
 	
-	console.log("html:ok");
+//	console.log("html:ok");
 //  Tracce 
 	songs();
 
-	
-//	Info File
-	info();
-	
 //	Sistema di controllo start/stop
 	control();
 }
@@ -193,25 +191,20 @@ function render() {
 //	Generazione del movimento delle barre
 
 function graphic(){
-	
 //	Fine traccia fermati
-	if (k + 1 > dataJSON[trackId].awe.length) 
+	if (k > trackLength) 
 	{
 		isPlay = false;
 		k=0;
 	}
-
 //	Se in pausa non cambi la rappresentazione
 	if(!isPlay) return;
 	
-	k++;
+	k+=Math.round(trackFs/nFrames);
 //	Fattore di scala
-
-	trackScale = dataJSON[trackId].awe.max();
-	console.log('scala: ' + trackScale);
-	var newPos = Math.round((CANVAS_HEIGHT) * dataJSON[trackId].awe[k]/trackScale);
+	var newPos = (CANVAS_HEIGHT/2) *track.awe[k];
 	
-	if (Math.abs(newPos) < 1) newPos = 1;
+	if ( newPos*newPos < 1) newPos = 1;
 	
 	for( var i = 0; i < CANVAS_WIDTH-1; i++)
 	{
@@ -227,9 +220,11 @@ function graphic(){
 // Info del File
 
 function info(){
-	$('#info').html('<p> File: '+ dataJSON[trackId].title + '  </p>');
-	console.log('info traccia: ' + dataJSON[trackId].title);
-	console.log('length data:' + dataJSON[trackId].awe.length / 60);
+	$('#info').html('<p> File: '+ track.title + '  </p>');
+	console.log('info traccia: ' + track.title);
+	console.log('length data:' +  trackLength / trackFs);
+	console.log('sampling: ' + trackFs);
+	
 }
 
 function songs(){
@@ -241,14 +236,17 @@ function songs(){
 		songList.insertAdjacentHTML('beforeend','<li id="'+ i +'">' + title + '</li>' );
 		audio.insertAdjacentHTML('beforeend','<source src="tests/'+ title + '">');
 	}
-	audio.load();
+	selectSong(0);
 }
 
 function selectSong(newTrack)
 {
-	var oldTrack = trackId;
-	audio.src = "tests/"+dataJSON[newTrack].title;	
-	audio.load();
+	//var oldTrack = trackId; 
 	trackId = newTrack;
+	track = dataJSON[trackId];
+	audio.src = "tests/"+track.title;	
+	audio.load();
+	trackLength = track.awe.length;
+	trackFs = track.Fs;
 	info();
 }
