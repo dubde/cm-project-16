@@ -28,13 +28,15 @@ files = dir('*.wav');
 %% Sampling e infos
 % ho bisogno di informazioni precise e legate anche all'esecuzione. DEVO
 % ricampionare in quanto otterrei dei valori troppo precisi per la
-% riproduzione grafica, diciamo che 100 campioni al secondo mi basteranno.
-Fs = 200;
+% riproduzione grafica, diciamo che 2048 campioni al secondo mi basteranno.
+Fs = 2048;
 
 for file = 1:length(files)
 
 
-     temp_a = miraudio(files(file).name,'Normal','Mono','Label',0,'Sampling',Fs);
+     temp_a = miraudio(files(file).name,'Normal','Mono','Label',0);
+
+     
     
 %% Informazioni da Estrarre
 % posso estrarre l'audiowave(miraudio), lo spettro (mirspectrum),
@@ -55,7 +57,7 @@ for file = 1:length(files)
     
  % avere i dati a 44100 è troppo pesante per il browser da gestire come
  % numero di campioni, quindi sottocampiono a 60.
-    %temp_a = miraudio(temp_a,'Sampling',60);
+    temp_env = mirenvelope(temp_a,'Sampling',Fs);
     %temp_spec = mirspectrum(temp_a,'Min',20,'Max',18000);
     %temp_peaks = mirpeaks(temp_a);
     %temp_onset = mironsets(temp_a);
@@ -75,12 +77,12 @@ for file = 1:length(files)
 %% Normalization and Semplification
 % vado a normalizzare i valori attorno a 1, arrotondarli alle prime 4 cifre
 % significative.
-awe_norm = mirgetdata(temp_a);
-awe_norm = round(awe_norm/max(abs(awe_norm)),4);
+env_norm = mirgetdata(temp_env);
+env_norm = round(env_norm/max(abs(env_norm)),4);
 
 
 %temp_s = struct('title', get(temp_a,'Label'),'awe', mirgetdata(temp_a),'spectrum', mirgetdata(temp_spec),'peaks', mirgetdata(temp_peaks),'rms', mirgetdata(temp_rms),'onsets', mirgetdata(temp_onset),'rolloff', mirgetdata(temp_rolloff),'tempo', mirgetdata(temp_time),'pitch', mirgetdata(temp_pitch));
-temp_s = struct('title', get(temp_a,'Label'),'Fs',200,'awe',awe_norm);
+temp_s = struct('title', get(temp_a,'Label'),'Fs',Fs,'env',env_norm);
 tracks(file) = temp_s;
 end
 cd('../');
