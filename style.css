@@ -3,22 +3,12 @@ body {
     background-color: #fff;
     margin: 0px;
     overflow: hidden;
+	padding: 5px;
 }
 
-#canvas-1 {
-    background-color: #f8f8f8;
-    width: 300px;
-    height: 200px;
-    border: 1px solid black;
-    margin: 0px;
-    padding: 0px;
-    position: static; /* fixed or static */
-    top: 0px;
-    left: 0px;
-}
-
-table.test {
-	
+table.test1 {
+	position: relative;
+	padding: 5px;
     border: 1px solid black;
 	left: 50px;
 	-webkit-box-shadow: 0px 0px 19px 5px rgba(50, 50, 50, 0.23);

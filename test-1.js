@@ -30,10 +30,6 @@ $.getJSON( fileJSON, function(json){ dataJSON = json.tracks;
 							console.log("completato");
 						});
 
-
-//	Analisi Online - Offline
-	var isOnline = false;
-
 //	Inizializzazione Canvas
 	var canvas = document.querySelector('.primo');
 	var canvasCtx = canvas.getContext("2d");
@@ -43,11 +39,10 @@ $.getJSON( fileJSON, function(json){ dataJSON = json.tracks;
 	var drawVisual;
 	
 //	Variabili Audio per riproduzione e Analisi
-	var context = new (window.AudioContext || window.webkitAudioContext)();
-	var analyser = context.createAnalyser();
+//	var context = new (window.AudioContext || window.webkitAudioContext)();
+//	var analyser = context.createAnalyser();
 	var audio = document.getElementById("audio");
 	var songList = document.getElementById("songs");
-	var source;
 	
 //  Boolean per start/stop
 	var initAnim = true;
@@ -68,21 +63,11 @@ function init(){
 //  Lettura dati estratti delle Tracce 
 	songs();
 
-//	Caricamento del file Audio
-	decode();
-
 //	Prima generazione grafica	
 	visualize();
 
 //	Sistema di controllo start/stop
 	control();
-}
-			
-//	Init Audio Analysis
-function decode(){
-	source = context.createMediaElementSource(audio);
-	source.connect(analyser);
-	analyser.connect(context.destination);
 }
 
 //	Controlli di traccia (start/stop/select)
@@ -115,6 +100,8 @@ function control() {
   }
 
  // Reset Button
+	
+	
     resetButton.onclick = function ResetParameters() {
     // Set StartButton to Start  
     startButton.innerHTML = 'Start';
@@ -128,13 +115,31 @@ function control() {
 	}
 
 //	Select Song
+//	Farebbe comodo poter usare la ResetParameters() già dichiarata ma non posso..
 	songList.addEventListener("click",function(e){
 		selectSong(e.target.id);
 	// Set StartButton to Start  
-	ResetParameters();
+    startButton.innerHTML = 'Start';
+    window.cancelAnimationFrame(drawVisual);
+    // Boolean for Stop Animatio
+	initAnim = true;
+    runAnim = false;
+	isPlay = false;
+	audio.pause();
+	audio.currentTime = 0;
+	visualize();
 	});
 	
-	audio.addEventListener("ended", ResetParameters);
+	audio.addEventListener("ended", function(){
+		startButton.innerHTML = 'Start';
+    window.cancelAnimationFrame(drawVisual);
+    // Boolean for Stop Animation
+	initAnim = true;
+    runAnim = false;
+	isPlay = false;
+	audio.pause();
+	audio.currentTime = 0;
+	});
 	visualize();
 }
 
@@ -143,17 +148,13 @@ function visualize() {
 	
 	var WIDTH = canvas.width;
 	var HEIGHT = canvas.height;
-	
-	analyser.fftSize = Fs;
-	var bufferLength = analyser.fftSize;
-	var dataArray = new Uint8Array(bufferLength);
+	var sampleNow = 0;
+		
+	var bufferLength = Fs;
 	canvasCtx.clearRect(0,0, WIDTH, HEIGHT);
 	
 	function draw(){
-		//console.log('play:' + context.currentTime);
 		drawVisual = requestAnimationFrame(draw);
-		
-		analyser.getByteTimeDomainData(dataArray); // da cambiare con il passaggio di elementi
 		
 		canvasCtx.fillStyle = 'rgb(248, 248,248)';
 		canvasCtx.fillRect(0,0,WIDTH,HEIGHT);
@@ -161,21 +162,24 @@ function visualize() {
 		canvasCtx.lineWidth = 2;
 		canvasCtx.strokeStyle = 'rgb(0,0,0)';
 		canvasCtx.beginPath();
+		
 //		La larghezza della sezione di riga da spostare è data dalla larghezza
-//		totale per una frazione pari alla lunghezza del buffer (da capire se in secondi o bit)
-		var sliceWidth = WIDTH * 1.0 / bufferLength; 
+//		totale per una frazione pari alla lunghezza della Fs, numero di campioni 
+		var sliceWidth = WIDTH * 1.0 / parseInt(Fs); 
 		var x = 0;
 	//	Gestione delle tempistiche imprecisa ma ci accontentiamo
 		var timeNow = (Math.trunc(audio.currentTime*100))/100;
-	//	Campione di finestra attuale: base da cui far andare i 2048 successivi, sapendo che son Fs al secondo
-		var sampleNow = Math.round(timeNow * Fs);
+	//	Campione di finestra attuale:
 		
-		for(var i = 0; i < bufferLength; i++) {
-			if( !isOnline){ // isOnline per scegliere se usare i dati ricavati da matlab o generati sul momento
-					var v = parseFloat(track.env[i+sampleNow]);
-					v = (v * -2) + 2;
+		sampleNow = Math.round(timeNow * Fs) - Fs;
+		
+		for(var i = 0; i < Fs; i++) {
+			
+			if ( timeNow == 0) {
+				var v = 2;
 			} else {
-				var v = dataArray[i] / 128.0;
+			var v = parseFloat(track.env[i+sampleNow]);
+			v = (v * -2) + 2;	
 			}
 			var y = v * HEIGHT/2;
 			if(i === 0) {
@@ -183,10 +187,9 @@ function visualize() {
 			} else {
 				canvasCtx.lineTo(x, y);
 			}	
-
 			x += sliceWidth;
 		}
-		canvasCtx.lineTo(canvas.width, canvas.height/2);
+		canvasCtx.lineTo(canvas.width, y); //canvas.height
 		canvasCtx.stroke();
     };
 
@@ -196,7 +199,7 @@ draw();
 
 // Info del File
 function info(){
-//	$('#info').html('<p> v: '+ track.title + '  </p>');
+	$('#info').html('<p> Traccia in esecuzione: '+ track.title + ', Fs: ' + Fs+', durata: ' + trackLength / Fs +'s</p>');
 	console.log('info traccia: ' + track.title);
 	console.log('length data:' +  trackLength / Fs);
 	console.log('sampling: ' + Fs);
