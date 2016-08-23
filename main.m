@@ -19,8 +19,10 @@ close all
 
 %% Test - 1
 
-cd('tests');
-%cd('audio');
+directory = 'tests';
+%directory = 'audio';
+cd(directory);
+
 
 files = dir('*.wav');
 %files = dir('*.mp3');
@@ -31,9 +33,12 @@ files = dir('*.wav');
 % riproduzione grafica, diciamo che 2048 campioni al secondo mi basteranno.
 Fs = 2048;
 
+% numero di canali del filterbank: default 10.
+Nch = 5;
+
 for file = 1:length(files)
 
-
+     tracks(file,:) = sprintf('%s',files(file).name);
      temp_a = miraudio(files(file).name,'Normal','Mono','Label',0);
 
      
@@ -55,9 +60,13 @@ for file = 1:length(files)
     %temp_rolloff = mirrolloff(temp_a);
     %temp_time = mirtempo(temp_a);
     
- % avere i dati a 44100 è troppo pesante per il browser da gestire come
+ % avere i dati a 44100 è troppo pesante come numero di campioni per il browser da gestire come
  % numero di campioni, quindi sottocampiono a 60.
     temp_env = mirenvelope(temp_a,'Sampling',Fs);
+    
+   f temp_a = miraudio(temp_a,'Sampling',Fs);
+    temp_fb = mirfilterbank(temp_a,'NbChannels',Nch);
+    
     %temp_spec = mirspectrum(temp_a,'Min',20,'Max',18000);
     %temp_peaks = mirpeaks(temp_a);
     %temp_onset = mironsets(temp_a);
@@ -80,26 +89,23 @@ for file = 1:length(files)
 env_norm = mirgetdata(temp_env);
 env_norm = round(env_norm/max(abs(env_norm)),4);
 
+clear('fb_norm');
+fb_anorm = mirgetdata(temp_fb);
+fb_norm(:,:) = fb_anorm(:,1,:);
+fb_norm = single(round(fb_norm/max(abs(fb_norm)),4));
 
-%temp_s = struct('title', get(temp_a,'Label'),'awe', mirgetdata(temp_a),'spectrum', mirgetdata(temp_spec),'peaks', mirgetdata(temp_peaks),'rms', mirgetdata(temp_rms),'onsets', mirgetdata(temp_onset),'rolloff', mirgetdata(temp_rolloff),'tempo', mirgetdata(temp_time),'pitch', mirgetdata(temp_pitch));
-temp_s = struct('title', get(temp_a,'Label'),'Fs',Fs,'env',env_norm);
-tracks(file) = temp_s;
+temp_s = struct('title', get(temp_a,'Label'),'Fs',Fs,'Nch',Nch,'env',env_norm,'filterbank',fb_norm);
+temp_name = sprintf('%s.json', tracks(file,:));
+cd('../');
+cd('json');
+savejson('track',temp_s,temp_name);
+cd('../');
+cd(directory);
+
 end
 cd('../');
 cd('json');
-
-%% Esempio conversione Json
-% A = [1 2; 3 4];
-% savejson('A',A,'matriceA')
-
-savejson('tracks',tracks,'1-tracks.json');
-
+temp_load = struct('dir',directory,'nTracks',file,'tracce',tracks);
+savejson('tracks',temp_load,'loader.json');
 cd('../');
-
-%% Test - 2
-
-%% Test - 3
-
-%% Test - 4
-
 disp('End of Analysis');
