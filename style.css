@@ -6,7 +6,7 @@ body {
 	padding: 5px;
 }
 
-table.test1,.test2 {
+table.test{
 	position: relative;
 	padding: 5px;
     border: 1px solid black;
@@ -18,6 +18,9 @@ table.test1,.test2 {
 
 
 
-li:hover {
-	background-color: #99ccff;
+li.audio:hover {
+	color: #23B6B6;
+	-webkit-transition: color 0.3s;
+	transition: color 0.3s;
+	cursor: pointer;
 }

@@ -32,9 +32,9 @@ files = dir('*.wav');
 % ricampionare in quanto otterrei dei valori troppo precisi per la
 % riproduzione grafica, diciamo che 2048 campioni al secondo mi basteranno.
 Fs = 2048;
-
+FsFb = 512;
 % numero di canali del filterbank: default 10.
-Nch = 5;
+Nch = 10;
 
 for file = 1:length(files)
 
@@ -64,7 +64,7 @@ for file = 1:length(files)
  % numero di campioni, quindi sottocampiono a 60.
     temp_env = mirenvelope(temp_a,'Sampling',Fs);
     
-   f temp_a = miraudio(temp_a,'Sampling',Fs);
+    temp_a = miraudio(temp_a,'Sampling',FsFb);
     temp_fb = mirfilterbank(temp_a,'NbChannels',Nch);
     
     %temp_spec = mirspectrum(temp_a,'Min',20,'Max',18000);
@@ -92,9 +92,14 @@ env_norm = round(env_norm/max(abs(env_norm)),4);
 clear('fb_norm');
 fb_anorm = mirgetdata(temp_fb);
 fb_norm(:,:) = fb_anorm(:,1,:);
-fb_norm = single(round(fb_norm/max(abs(fb_norm)),4));
+fb_max = max(abs(fb_norm));
+for i=1:size(fb_norm)
+    for j=1:size(fb_norm,2)
+        fb_norm(i,j) = round(((fb_norm(i,j)/fb_max(j))+1)/2,4);
+    end
+end
 
-temp_s = struct('title', get(temp_a,'Label'),'Fs',Fs,'Nch',Nch,'env',env_norm,'filterbank',fb_norm);
+temp_s = struct('title', get(temp_a,'Label'),'Fs',Fs,'env',env_norm,'FsFb',FsFb,'Nch',Nch,'filterbank',fb_norm);
 temp_name = sprintf('%s.json', tracks(file,:));
 cd('../');
 cd('json');
