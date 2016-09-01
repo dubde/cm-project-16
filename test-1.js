@@ -3,8 +3,8 @@ function rappresentazioni(tracks){
 
 	console.log('esempio');
 //	Inizializzazione Canvas
-	var canvas = document.getElementById('display');
-	var canvasCtx = canvas.getContext("2d");
+	var canvas = document.querySelector('canvas');
+	var canvasCtx = canvas.getContext('2d');
 	
 //	var larghezza = document.querySelector('.display').clientWidth;
 	var larghezza = canvas.clientWidth;
@@ -30,8 +30,71 @@ function rappresentazioni(tracks){
 	var trackLength = 0;
 	var track;
 	
-	init();
 	
+function persVisualizer(){
+	this.schene;
+	this.camera;
+	this.renderer;
+	this.controls;
+	this.barreX = new Array();
+	this.barreY = new Array();
+}
+
+persVisualizer.prototype.initRenderer = function(){
+	this.renderer = new THREE.WebGLRenderer({ antialias: true });
+	this.renderer.setSize(canvas.width,canvas.height);
+	this.renderer.setClearColor(this.scene.fog.color,1);
+	this.renderer.domElement.style.position = "absolute";
+	this.renderer.domElement.style.left = '6px';
+	this.renderer.domElement.style.zIndex = "-1";
+	canvas.parentNode.appendChild(this.renderer.domElement, canvas);
+	
+};
+
+persVisualizer.prototype.initialize = function() {
+	
+	this.scene = new THREE.Scene();
+	this.scene.fog = new THREE.FogExp2( 0xf8f8f8, 0.002);
+	
+	var WIDTH = canvas.width;
+	var HEIGHT = canvas.height;
+	
+	this.camera = new THREE.PerspectiveCamera(60, WIDTH / HEIGHT, 0.1, 1000); //FOV, a/r, near,far
+	this.camera.position.set(5, 5, 5);
+	this.camera.lookAt( this.scene.position );
+	
+//	this.scene.add(this.camera);
+		
+	var light = new THREE.PointLight(0xffffcc);
+	light.position.set(-100, 200, 100);
+	this.scene.add(light);
+	
+	var light = new THREE.AmbientLight(0xffffff);
+	this.scene.add(light);
+};
+
+persVisualizer.prototype.createGeometry = function() {
+	// creazione degli elementi rappresentati.
+	for (var i = 0; i < chCount; i++)
+	{
+		var barra = new THREE.BoxGeometry(0.5, 0.5, 0.5);
+		
+		var materiale = new THREE.MeshPhongMaterial({
+			color: 0xff6699,
+			specular: 0xffffff
+		});
+		this.barreX[i] = new THREE.Mesh(barra, materiale);
+		this.barreY[i] = new THREE.Mesh(barra, materiale);
+		this.barreX[i].position.set(i - chCount/2, 0,0);
+		this.scene.add(this.barreX[i]);
+		this.barreY[i].position.set(0, i - chCount/2,0);
+		this.scene.add(this.barreY[i]);
+	}
+};
+
+
+	init();
+
 function init(){	
 	
 //  Lettura dati estratti delle Tracce 
@@ -40,7 +103,7 @@ function init(){
 //	Inizializzazione Elementi 3D 
 	visualizer.initialize();
 	visualizer.createGeometry();
-
+	visualizer.initRenderer();
 //	Prima generazione grafica	
 	visualize();
 
@@ -130,12 +193,22 @@ function visualize() {
 	var WIDTH = canvas.width;
 	var HEIGHT = canvas.height;	
 	
+	
 	var rappresentazione = rappSelector.value;
-	console.log('selected:'+rappresentazione);
+	
+	// trucchetto per spostare la rappresentazione THREEJS in evidenza o no.
+	if (rappresentazione < 4) {
+		visualizer.renderer.domElement.style.zIndex = "-1";
+	} else {
+		visualizer.renderer.domElement.style.zIndex = "1";
+	}
+	
+	console.log('selected:'+rappresentazione+' '+canvas.width);
 	canvasCtx.clearRect(0,0, WIDTH, HEIGHT);
 	
 	if( rappresentazione == 1){
 //	Rappresentazione 1D linea
+		
 		function draw(){
 			drawVisual = requestAnimationFrame(draw);
 			canvasCtx.fillStyle = 'rgb(248, 248,248)';
@@ -145,7 +218,7 @@ function visualize() {
 			canvasCtx.strokeStyle = 'rgb(0,0,0)';
 			canvasCtx.beginPath();
 		
-		//	Gestione delle tempistiche imprecisa ma ci accontentiamo
+	//	Gestione delle tempistiche imprecisa ma ci accontentiamo
 	var timeNow = (Math.trunc(audio.currentTime*100))/100;
 	//	Campione di finestra attuale:
 	var sampleNow = Math.round(timeNow * Fs) - Fs;
@@ -210,10 +283,9 @@ function visualize() {
 		}
 	} else if(rappresentazione==3){
 //		Rappresentazione barre delle frequenze
-
 		function draw() {
 			drawVisual = requestAnimationFrame(draw);
-
+			
 			canvasCtx.fillStyle = 'rgb(248, 248,248)';
 			canvasCtx.fillRect(0, 0, WIDTH, HEIGHT);
 
@@ -239,10 +311,35 @@ function visualize() {
 		}
 	} else if(rappresentazione==4){
 //		Rappresentazione personalizzata
-		function draw(){
+		// raggio di rotazione
+		var raggio = 5;
+		function draw() {
+			drawVisual = requestAnimationFrame(draw);
+			
 			console.log("presonalizzata");
-			visualizer.initRenderer();
-			visualizer.renderMe();
+			
+			var timeNow = (Math.trunc(audio.currentTime*100))/100;
+		//	Campione di finestra attuale:
+			var sampleFbNow = Math.round(timeNow * FsFb);
+			var sampleEnvNow = Math.round(timeNow * Fs);
+			
+			// rotazione della camera attorno all'origine
+			if(isPlay){
+				visualizer.camera.position.x = visualizer.scene.position.x + raggio * Math.cos(0.5*timeNow);
+				visualizer.camera.position.z = visualizer.scene.position.z + raggio * Math.sin(0.5*timeNow);
+				visualizer.camera.position.y = visualizer.scene.position.y + raggio * Math.sin(0.5*timeNow);
+				visualizer.camera.lookAt( visualizer.scene.position);
+			}
+			
+			visualizer.renderer.render(visualizer.scene, visualizer.camera);
+	
+		// animazione in base ai dati
+			for (var i = 0; i < chCount; i++)
+			{
+				var valore = 2*raggio * parseFloat(track.filterbank[sampleFbNow][i]);
+				visualizer.barreX[i].scale.z = valore;
+				visualizer.barreY[i].scale.z = valore;
+			}	
 		}
 	}
 	draw();
@@ -254,53 +351,6 @@ rappSelector.onchange = function(){
 	visualize();
 }
 	
-function persVisualizer(){
-	this.schene;
-	this.camera;
-	this.renderer;
-//	this.controls;
-}
-
-persVisualizer.prototype.initRenderer = function(){
-	this.renderer = new THREE.WebGLRenderer({ canvas: display, antialias: true });
-	this.renderer.setSize(canvas.width,canvas.height);
-	this.renderer.setClearColor(0xf8f8f8,1);	
-};
-
-persVisualizer.prototype.initialize = function() {
-	
-	this.scene = new THREE.Scene();
-	
-	var WIDTH = canvas.width;
-	var HEIGHT = canvas.height;
-	
-	this.camera = new THREE.PerspectiveCamera(40, WIDTH / HEIGHT, 0.1, 20000); //FOV, a/r, near,far
-	this.camera.position.set(0, 45, 0);
-	this.scene.add(this.camera);
-	
-	var that = this;
-	
-	var light = new THREE.PointLight(0xffffff);
-	light.position.set(-100, 200, 100);
-	this.scene.add(light);
-};
-
-persVisualizer.prototype.createGeometry = function() {
-	console.log("creazione geometrie");
-};
-
-persVisualizer.prototype.renderMe = function(){
-	var timeNow = (Math.trunc(audio.currentTime*100))/100;
-	//	Campione di finestra attuale:
-	var sampleFbNow = Math.round(timeNow * FsFb);
-	var sampleEnvNow = Math.round(timeNow * Fs);
-	
-	visualizer.renderer.render(visualizer.scene, visualizer.camera);
-	
-	// animazione in base ai dati
-	
-};
-
 // Info del File
 function info(){	
 	infos.innerHTML = '<p> Traccia: '+ track.title + ', Fs: ' + Fs+', Nch: '+chCount+', durata: ' + trackLength +'s</p>';
