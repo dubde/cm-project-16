@@ -24,3 +24,10 @@ li.audio:hover {
 	transition: color 0.3s;
 	cursor: pointer;
 }
+
+#startButton:hover,#resetButton:hover {
+	color: #ff4d4d;
+	-webkit-transition: color 0.3s;
+	transition: color 0.3s;
+	cursor: pointer;
+}

@@ -3,7 +3,7 @@ function rappresentazioni(tracks){
 
 	console.log('esempio');
 //	Inizializzazione Canvas
-	var canvas = document.querySelector('.display');
+	var canvas = document.getElementById('display');
 	var canvasCtx = canvas.getContext("2d");
 	
 //	var larghezza = document.querySelector('.display').clientWidth;
@@ -11,6 +11,7 @@ function rappresentazioni(tracks){
 	canvas.setAttribute('width', larghezza);
 	var drawVisual;
 	
+	visualizer = new persVisualizer();
 //	Variabili Audio per riproduzione e Analisi
 	
 	var audio = document.getElementById("audio");
@@ -35,6 +36,10 @@ function init(){
 	
 //  Lettura dati estratti delle Tracce 
 	songs();
+	
+//	Inizializzazione Elementi 3D 
+	visualizer.initialize();
+	visualizer.createGeometry();
 
 //	Prima generazione grafica	
 	visualize();
@@ -147,7 +152,7 @@ function visualize() {
 		
 	//	La larghezza della sezione di riga da spostare è data dalla larghezza
 	//	totale per una frazione pari alla lunghezza della Fs, numero di campioni 
-			var sliceWidth = WIDTH * 1.0 / parseInt(Fs); 
+			var sliceWidth = WIDTH * 1.0 / Fs; 
 			var x = 0;
 		
 			for(var i = 0; i < Fs; i++) {
@@ -236,6 +241,8 @@ function visualize() {
 //		Rappresentazione personalizzata
 		function draw(){
 			console.log("presonalizzata");
+			visualizer.initRenderer();
+			visualizer.renderMe();
 		}
 	}
 	draw();
@@ -254,11 +261,45 @@ function persVisualizer(){
 //	this.controls;
 }
 
+persVisualizer.prototype.initRenderer = function(){
+	this.renderer = new THREE.WebGLRenderer({ canvas: display, antialias: true });
+	this.renderer.setSize(canvas.width,canvas.height);
+	this.renderer.setClearColor(0xf8f8f8,1);	
+};
+
 persVisualizer.prototype.initialize = function() {
 	
 	this.scene = new THREE.Scene();
 	
-}
+	var WIDTH = canvas.width;
+	var HEIGHT = canvas.height;
+	
+	this.camera = new THREE.PerspectiveCamera(40, WIDTH / HEIGHT, 0.1, 20000); //FOV, a/r, near,far
+	this.camera.position.set(0, 45, 0);
+	this.scene.add(this.camera);
+	
+	var that = this;
+	
+	var light = new THREE.PointLight(0xffffff);
+	light.position.set(-100, 200, 100);
+	this.scene.add(light);
+};
+
+persVisualizer.prototype.createGeometry = function() {
+	console.log("creazione geometrie");
+};
+
+persVisualizer.prototype.renderMe = function(){
+	var timeNow = (Math.trunc(audio.currentTime*100))/100;
+	//	Campione di finestra attuale:
+	var sampleFbNow = Math.round(timeNow * FsFb);
+	var sampleEnvNow = Math.round(timeNow * Fs);
+	
+	visualizer.renderer.render(visualizer.scene, visualizer.camera);
+	
+	// animazione in base ai dati
+	
+};
 
 // Info del File
 function info(){	
