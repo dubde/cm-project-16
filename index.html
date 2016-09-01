@@ -2,19 +2,49 @@
 <html>
 	<head>
 		<meta charset=utf-8>
-		<title>My first Three.js app</title>
+		<title>Test-1</title>
 		<link rel="stylesheet" type="text/css" href="style.css">
+		<script src="jquery.min.js"></script>
 		<script src="three.js"></script>
-		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
-		<script src="drawing.js" type="text/javascript" defer="defer"></script>
+		<script src="loader.js"></script>
+		<script src="test-1.js" type="text/javascript"  defer="defer"></script>
 	<script type="text/javascript">
 
 </script>
 	</head>
 	<body>
-<h1> Testo di Prova </h1>
-<div id="startButtonId"> <a href="#" >start</a> </div> <div id="resetButtonId"> <a href="#">stop</a> </div>
+<audio id="audio"></audio>
+<h1> Test  </h1>
+<table class="test">
+  <tr>
+    <th colspan="3">
+<div id="info"></div>
+<form>
+		<label for="selector">Rappresentazione:</label>
+		<select id="selector" name="rappresentazione">
+			<option value="1">Linea d'Onda</option>
+			<option value="2">Spettrogramma 2D</option>
+			<option value="3">Istogramma Spettrale</option>
+			<option value="4">Personalizzato</option>
+		</select>
+	</form>
+	</th>
+  </tr>
+  <tr>
+    <th colspan="2">
+<canvas id="display" width="860" height="320"></canvas></th>
+    <th rowspan="2">
+	<ol id="songs" style="list-style-type:none">
+	</ol>
+	</th>
+  </tr>
+  <tr>
+    <td>
+<div id="startButton">Start</div></td>
+    <td>
+<div id="resetButton">Reset</div></td>
+  </tr>
+</table>
 <div id="test"></div>
-		<div id="canvas"></div>
 	</body>
 </html>

@@ -1,0 +1,13 @@
+{
+	"tracks": {
+		"dir": "tests",
+		"nTracks": 5,
+		"tracce": [
+			"test1.wav",
+			"test2.wav",
+			"test3.wav",
+			"test4.wav",
+			"test5.wav"
+		]
+	}
+}
