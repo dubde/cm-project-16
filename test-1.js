@@ -1,7 +1,6 @@
 
 function rappresentazioni(tracks){						
 
-	console.log('esempio');
 //	Inizializzazione Canvas
 	var canvas = document.querySelector('canvas');
 	var canvasCtx = canvas.getContext('2d');
@@ -183,7 +182,7 @@ function control() {
 		runAnim = false;
 		isPlay = false;
 		audio.pause();
-		//audio.currentTime = 0;
+		audio.currentTime = 0;
 	});
 }
 
@@ -203,7 +202,7 @@ function visualize() {
 		visualizer.renderer.domElement.style.zIndex = "1";
 	}
 	
-	console.log('selected:'+rappresentazione+' '+canvas.width);
+	console.log('rapp selected:'+rappresentazione+' '+canvas.width);
 	canvasCtx.clearRect(0,0, WIDTH, HEIGHT);
 	
 	if( rappresentazione == 1){
@@ -276,7 +275,17 @@ function visualize() {
 				} else {
 					pxColor = Math.trunc(parseFloat(track.filterbank[sampleNow][i])*255);
 				}
-				canvasCtx.fillStyle = 'rgb('+pxColor+','+pxColor+',255)';
+				//	colore in base all'intensità
+				//canvasCtx.fillStyle = 'rgb('+pxColor+','+pxColor+',255)';
+				if(pxColor <= 128){
+					var colorR = 0;
+					var colorG = pxColor*2;
+				} else {
+					var colorR = (pxColor-127)*2;
+					var colorG = 255;
+				}
+				var colorB = 255 - pxColor;
+				canvasCtx.fillStyle = 'rgb('+colorR+','+colorG+','+colorB+')';
 				canvasCtx.fillRect(xNow, y, xNext-xNow, pxHeight);
 				y += pxHeight;
 			}
@@ -292,19 +301,35 @@ function visualize() {
 			//	Gestione delle tempistiche imprecisa ma ci accontentiamo
 			var timeNow = (Math.trunc(audio.currentTime*100))/100;
 			//	Campione di finestra attuale:
-			var sampleNow = Math.round(timeNow * FsFb);
+			var sampleNow = Math.trunc(timeNow * FsFb);
 	
 			var barWidth = (WIDTH / chCount) - 1;
 			var barHeight;
+			var valueSample;
 			var x = 0;
 			for(var i = 0; i < chCount; i++) {
 				if(timeNow == 0){
-					barHeight = HEIGHT/2;
+					valueSample = 0.001; // valore minimo in entrata
 				} else {
-					barHeight = parseFloat(track.filterbank[sampleNow][i]);
-					barHeight = barHeight * HEIGHT;
+					valueSample = parseFloat(track.filterbank[sampleNow][i]);
 				}
-				canvasCtx.fillStyle = 'rgb(100,0,0)';
+				
+			//	colore in base all'intensità
+			//	canvasCtx.fillStyle = 'rgb(100,0,0)';
+				
+				if(valueSample <= 0.500){ // da blu, valore basso, a verdino 
+					var colorR = 0;
+					var colorG = Math.trunc(valueSample*255)*2;
+				} else { 
+					var colorR = Math.trunc((valueSample-0.5)*255)*2;
+					var colorG = 255;
+				}
+				var colorB = Math.trunc(255-valueSample*255); // scalo su tutto il blu indipendentemente.
+				canvasCtx.fillStyle = 'rgb('+colorR+','+colorG+','+colorB+')';
+				//console.log('vS:'+valueSample+' colorsRGB: '+colorR+colorR+colorB+canvasCtx.fillStyle);
+				//canvasCtx.fillStyle = 'rgb(255,0,255)';
+				barHeight = valueSample * HEIGHT;
+				infos.innerHTML = '<p> Traccia: '+ track.title + ', barHeight: ' + barHeight+', valueSample: '+valueSample+', sampleNow: '+sampleNow+'</p>';
 				canvasCtx.fillRect(x,HEIGHT - barHeight, barWidth ,HEIGHT);
 				x += barWidth + 1;
 			}
@@ -312,7 +337,7 @@ function visualize() {
 	} else if(rappresentazione==4){
 //		Rappresentazione personalizzata
 		// raggio di rotazione
-		var raggio = 5;
+		var raggio = 10;
 		function draw() {
 			drawVisual = requestAnimationFrame(draw);
 			
@@ -353,7 +378,7 @@ rappSelector.onchange = function(){
 	
 // Info del File
 function info(){	
-	infos.innerHTML = '<p> Traccia: '+ track.title + ', Fs: ' + Fs+', Nch: '+chCount+', durata: ' + trackLength +'s</p>';
+	//infos.innerHTML = '<p> Traccia: '+ track.title + ', Fs: ' + Fs+', FsFb: '+FsFb+', Nch: '+chCount+', durata: ' + trackLength +'s</p>';
 	console.log('info traccia: ' + track.title);
 	console.log('sampling: ' + Fs);
 }
@@ -362,7 +387,7 @@ function songs(){
 	console.log('tracce: ' + nTracks);
 	for(i=0; i < nTracks; i++)
 	{
-		var title = trackList[i];
+		var title = trackList[i].title;
 		songList.insertAdjacentHTML('beforeend','<li id="'+ i +'" class="audio">' + title + '</li>' );
 		audio.insertAdjacentHTML('beforeend','<source src="tests/'+ title + '">');
 	}

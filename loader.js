@@ -56,7 +56,7 @@ function loadTrack(index){
 		rappresentazioni(tracksData);
 		return 0;
 	}
-	$.getJSON( dirJSON + '/'+trackList[index]+'.json', function(json){ 
+	$.getJSON( dirJSON + '/'+trackList[index].title+'.json', function(json){ 
 						tracksData.push(json.track);})
 						.done(function() {
 							console.log('traccia '+index+': '+ tracksData[index].title );
