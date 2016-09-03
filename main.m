@@ -24,7 +24,7 @@ close all
 % ricampionare in quanto otterrei dei valori troppo precisi per la
 % riproduzione grafica, diciamo che 2048 campioni al secondo mi basteranno.
 Fs = 2048;
-FsFb = 256;
+FsFb = 2048;
 % numero di canali del filterbank: default 10.
 Nch = 20;
 nFile = 0;
@@ -97,10 +97,15 @@ for directory = folders
             clear('fb_norm');
             fb_anorm = mirgetdata(temp_fb);
             fb_norm(:,:) = fb_anorm(:,1,:);
-            fb_max = max(max(abs(fb_norm)));
-            fb_n = min(min(fb_norm))/fb_max;
             
-            fb_norm(:) = round((round(fb_norm(:)./fb_max,4)-fb_n)/2,4);
+            fb_norm = abs(fb_norm);
+            fb_max = max(max(fb_norm));
+            fb_norm(:) = round(fb_norm(:)./fb_max,4);
+           
+            
+            %fb_max = max(max(abs(fb_norm)));
+            %fb_n = min(min(fb_norm))/fb_max;
+            %fb_norm(:) = round((round(fb_norm(:)./fb_max,4)-fb_n)/2,4);
            
             temp_s = struct('title', get(temp_a,'Label'),'Fs',Fs,'env',env_norm,'FsFb',FsFb,'Nch',Nch,'filterbank',fb_norm);
             %temp_name = sprintf('%s.json', tracks(nFile,:));

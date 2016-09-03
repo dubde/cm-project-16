@@ -84,9 +84,9 @@ persVisualizer.prototype.createGeometry = function() {
 		});
 		this.barreX[i] = new THREE.Mesh(barra, materiale);
 		this.barreY[i] = new THREE.Mesh(barra, materiale);
-		this.barreX[i].position.set(i - chCount/2, 0,0);
+		this.barreX[i].position.set(i, 0,i-1);
 		this.scene.add(this.barreX[i]);
-		this.barreY[i].position.set(0, i - chCount/2,0);
+		this.barreY[i].position.set(-i, 0,i+1);
 		this.scene.add(this.barreY[i]);
 	}
 };
@@ -249,9 +249,11 @@ function visualize() {
 	
 	} else if(rappresentazione==2){
 //		Rappresentazione 2D planare
-			//canvasCtx.fillStyle = 'rgb(248, 248,248)';
-			//canvasCtx.fillRect(0, 0, WIDTH, HEIGHT);
 			var xNext = 0;
+			if(!isPlay){
+					canvasCtx.fillStyle = 'rgb(248,248,248)';
+					canvasCtx.fillRect(0, 0, WIDTH, HEIGHT);
+				}
 			
 		function draw() {
 			drawVisual = requestAnimationFrame(draw);
@@ -309,7 +311,7 @@ function visualize() {
 			var x = 0;
 			for(var i = 0; i < chCount; i++) {
 				if(timeNow == 0){
-					valueSample = 0.001; // valore minimo in entrata
+					valueSample = 0.0; // valore minimo in entrata
 				} else {
 					valueSample = parseFloat(track.filterbank[sampleNow][i]);
 				}
@@ -329,7 +331,6 @@ function visualize() {
 				//console.log('vS:'+valueSample+' colorsRGB: '+colorR+colorR+colorB+canvasCtx.fillStyle);
 				//canvasCtx.fillStyle = 'rgb(255,0,255)';
 				barHeight = valueSample * HEIGHT;
-				infos.innerHTML = '<p> Traccia: '+ track.title + ', barHeight: ' + barHeight+', valueSample: '+valueSample+', sampleNow: '+sampleNow+'</p>';
 				canvasCtx.fillRect(x,HEIGHT - barHeight, barWidth ,HEIGHT);
 				x += barWidth + 1;
 			}
@@ -378,7 +379,7 @@ rappSelector.onchange = function(){
 	
 // Info del File
 function info(){	
-	//infos.innerHTML = '<p> Traccia: '+ track.title + ', Fs: ' + Fs+', FsFb: '+FsFb+', Nch: '+chCount+', durata: ' + trackLength +'s</p>';
+	infos.innerHTML = '<p> Traccia: '+ track.title + ', Fs: ' + Fs+', FsFb: '+FsFb+', Nch: '+chCount+', durata: ' + trackLength +'s</p>';
 	console.log('info traccia: ' + track.title);
 	console.log('sampling: ' + Fs);
 }
