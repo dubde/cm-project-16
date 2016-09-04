@@ -9,8 +9,9 @@ function rappresentazioni(tracks){
 	var larghezza = canvas.clientWidth;
 	canvas.setAttribute('width', larghezza);
 	var drawVisual;
-	
 	visualizer = new persVisualizer();
+	var WIDTH = canvas.width;
+	var HEIGHT = canvas.height;	
 //	Variabili Audio per riproduzione e Analisi
 	
 	var audio = document.getElementById("audio");
@@ -23,6 +24,9 @@ function rappresentazioni(tracks){
 	var runAnim = false;
 	var isPlay = false;
 
+//	Controlli del mousemove
+	var mouseX = 0;
+	var mouseY = 0;
 
 //	Dati Traccia Statici 
 	var trackId = 0;
@@ -37,6 +41,11 @@ function persVisualizer(){
 	this.controls;
 	this.barreX = new Array();
 	this.barreY = new Array();
+	this.luci = new Array();
+	this.floorGeometry;
+	this.floorMaterial
+	this.floor;
+	this.materiale;
 }
 
 persVisualizer.prototype.initRenderer = function(){
@@ -44,7 +53,7 @@ persVisualizer.prototype.initRenderer = function(){
 	this.renderer.setSize(canvas.width,canvas.height);
 	this.renderer.setClearColor(this.scene.fog.color,1);
 	this.renderer.domElement.style.position = "absolute";
-	this.renderer.domElement.style.left = '6px';
+	this.renderer.domElement.style.left = '6px'; // correzione da sistemare a seconda del browser
 	this.renderer.domElement.style.zIndex = "-1";
 	canvas.parentNode.appendChild(this.renderer.domElement, canvas);
 	
@@ -53,45 +62,79 @@ persVisualizer.prototype.initRenderer = function(){
 persVisualizer.prototype.initialize = function() {
 	
 	this.scene = new THREE.Scene();
-	this.scene.fog = new THREE.FogExp2( 0xf8f8f8, 0.002);
+	this.scene.fog = new THREE.Fog( 0x3f3f3f, 1,45); 
 	
-	var WIDTH = canvas.width;
-	var HEIGHT = canvas.height;
-	
-	this.camera = new THREE.PerspectiveCamera(60, WIDTH / HEIGHT, 0.1, 1000); //FOV, a/r, near,far
-	this.camera.position.set(5, 5, 5);
+	this.camera = new THREE.PerspectiveCamera(45, WIDTH / HEIGHT, 0.1, 1000); //FOV, a/r, near,far
+	this.camera.position.set(0, 2, 8*chCount/10);
 	this.camera.lookAt( this.scene.position );
 	
 //	this.scene.add(this.camera);
-		
-	var light = new THREE.PointLight(0xffffcc);
-	light.position.set(-100, 200, 100);
+	/*	
+	var light = new THREE.PointLight(0xffff00);
+	light.position.set(0, 10, -5);
 	this.scene.add(light);
-	
+	*/
 	var light = new THREE.AmbientLight(0xffffff);
 	this.scene.add(light);
 };
 
 persVisualizer.prototype.createGeometry = function() {
 	// creazione degli elementi rappresentati.
+		
+	this.floorGeometry = new THREE.PlaneGeometry(70, 60, chCount/8, 1);
+	this.floorMaterial = new THREE.MeshPhongMaterial({ color: 0x66ffff, side: THREE.DoubleSide });
+	this.floorMaterial.opacity = 0.8 ;
+	this.floorMaterial.transparent = true;
+	this.floor = new THREE.Mesh(this.floorGeometry, this.floorMaterial);
+	this.floor.rotation.x = Math.PI / -2;
+	// primo round?
+	
+	this.scene.add(this.floor);
+	
+	
+	
 	for (var i = 0; i < chCount; i++)
 	{
-		var barra = new THREE.BoxGeometry(0.5, 0.5, 0.5);
+		var barra = new THREE.BoxGeometry(1, 0.5, 0.1);
 		
-		var materiale = new THREE.MeshPhongMaterial({
+		materiale = new THREE.MeshPhongMaterial({
 			color: 0xff6699,
 			specular: 0xffffff
 		});
 		this.barreX[i] = new THREE.Mesh(barra, materiale);
 		this.barreY[i] = new THREE.Mesh(barra, materiale);
-		this.barreX[i].position.set(i, 0,i-1);
+		
+		this.barreX[i].position.set( -i-0.5, 0, 0);
 		this.scene.add(this.barreX[i]);
-		this.barreY[i].position.set(-i, 0,i+1);
+		this.barreY[i].position.set( i+0.5, 0, 0);
 		this.scene.add(this.barreY[i]);
+		
+		// light associata
+		this.luci[i] = new THREE.PointLight(0xff00ff,0xffff00, 4, 2,1);
+		this.luci[i].position.set( -i-0.5, 1, 2);
+		this.scene.add(this.luci[i]);
+		
+		this.luci[chCount + i] = new THREE.PointLight(0xffff00, 4, 2,1);
+		this.luci[chCount + i].position.set( i+0.5, 1, 2);
+		this.scene.add(this.luci[chCount + i]);
 	}
 };
 
+/*
+function onDocumentMouseMove(event){
+	mouseX = event.clientX - WIDTH/2;
+	mouseY = event.clientY - HEIGHT/2;
+}
 
+/*
+function waveupdate(sample){
+	for(var i = 0; i < visualizer.floorGeometry.vertices.length; i++)
+	{
+		var v = visualizer.floorGeometry.vertices[i];
+		v.z 
+	}
+}
+*/
 	init();
 
 function init(){	
@@ -104,10 +147,12 @@ function init(){
 	visualizer.createGeometry();
 	visualizer.initRenderer();
 //	Prima generazione grafica	
+	
 	visualize();
 
 //	Sistema di controllo start/stop
 	control();
+	//document.addEventListener('mousemove', onDocumentMouseMove, false);
 }
 
 //	Controlli di traccia (start/stop/select)
@@ -189,10 +234,6 @@ function control() {
 //	Creo i punti del grafico
 function visualize() {	
 	
-	var WIDTH = canvas.width;
-	var HEIGHT = canvas.height;	
-	
-	
 	var rappresentazione = rappSelector.value;
 	
 	// trucchetto per spostare la rappresentazione THREEJS in evidenza o no.
@@ -249,12 +290,13 @@ function visualize() {
 	
 	} else if(rappresentazione==2){
 //		Rappresentazione 2D planare
-			var xNext = 0;
-			if(!isPlay){
-					canvasCtx.fillStyle = 'rgb(248,248,248)';
-					canvasCtx.fillRect(0, 0, WIDTH, HEIGHT);
-				}
-			
+			var pxWidth = Math.trunc((WIDTH / ( trackLength * FsFb))*1000)/1000;
+			var pxHeight = HEIGHT / chCount;
+			var xNext = Math.trunc(audio.currentTime * FsFb) * pxWidth;
+			canvasCtx.fillStyle = 'rgb(248,248,248)';
+			canvasCtx.fillRect(0, 0, WIDTH, HEIGHT);
+
+		
 		function draw() {
 			drawVisual = requestAnimationFrame(draw);
 
@@ -263,8 +305,6 @@ function visualize() {
 			//	Campione di finestra attuale:
 			var sampleNow = Math.round(timeNow * FsFb);
 			// 	Quante rappresentazioni ci stanno nello schermo attuale
-			var pxWidth = Math.trunc((WIDTH / ( trackLength * FsFb))*1000)/1000;
-			var pxHeight = HEIGHT / chCount;
 			var pxColor = 0;
 			var xNow = xNext;
 			xNext = sampleNow * pxWidth;
@@ -331,14 +371,14 @@ function visualize() {
 				//console.log('vS:'+valueSample+' colorsRGB: '+colorR+colorR+colorB+canvasCtx.fillStyle);
 				//canvasCtx.fillStyle = 'rgb(255,0,255)';
 				barHeight = valueSample * HEIGHT;
-				canvasCtx.fillRect(x,HEIGHT - barHeight, barWidth ,HEIGHT);
+				canvasCtx.fillRect(x,HEIGHT - barHeight, barWidth , barHeight);
 				x += barWidth + 1;
 			}
 		}
 	} else if(rappresentazione==4){
 //		Rappresentazione personalizzata
 		// raggio di rotazione
-		var raggio = 10;
+		
 		function draw() {
 			drawVisual = requestAnimationFrame(draw);
 			
@@ -346,30 +386,39 @@ function visualize() {
 			
 			var timeNow = (Math.trunc(audio.currentTime*100))/100;
 		//	Campione di finestra attuale:
+			var nVert = visualizer.floorGeometry.vertices.lentgh;
 			var sampleFbNow = Math.round(timeNow * FsFb);
-			var sampleEnvNow = Math.round(timeNow * Fs);
+			var sampleEnvNow = Math.round(timeNow * nVert);
 			
 			// rotazione della camera attorno all'origine
 			if(isPlay){
-				visualizer.camera.position.x = visualizer.scene.position.x + raggio * Math.cos(0.5*timeNow);
-				visualizer.camera.position.z = visualizer.scene.position.z + raggio * Math.sin(0.5*timeNow);
-				visualizer.camera.position.y = visualizer.scene.position.y + raggio * Math.sin(0.5*timeNow);
+			//	visualizer.camera.position.x += (mouseX - visualizer.camera.x) * 10;
+			//	visualizer.camera.position.z += (mouseY - visualizer.camera.z) * 10;
+				visualizer.camera.position.x += 0.01*Math.cos(0.1*timeNow*Math.PI);
+				//visualizer.camera.position.z = 18 + 0.5*Math.sin(timeNow*Math.PI);
 				visualizer.camera.lookAt( visualizer.scene.position);
 			}
+			
 			
 			visualizer.renderer.render(visualizer.scene, visualizer.camera);
 	
 		// animazione in base ai dati
-			for (var i = 0; i < chCount; i++)
+			for (var i = 0; i < chCount && isPlay; i++)
 			{
-				var valore = 2*raggio * parseFloat(track.filterbank[sampleFbNow][i]);
-				visualizer.barreX[i].scale.z = valore;
-				visualizer.barreY[i].scale.z = valore;
-			}	
+				var valore = 2 * parseFloat(track.filterbank[sampleFbNow][i]);
+				visualizer.barreX[i].scale.y = 10  * valore;
+				visualizer.barreY[i].scale.y = 10  * valore;
+				
+				visualizer.luci[i].power = 5* valore;
+				visualizer.luci[chCount + i].power = 5*valore;
+				
+			}
+			visualizer.floorMaterial.needsUpdate = true;
 		}
 	}
 	draw();
 }
+
 
 //	Cambio rappresentazione
 rappSelector.onchange = function(){
