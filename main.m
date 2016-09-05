@@ -59,22 +59,21 @@ for directory = folders
 % pezzo.
     
     
-            %temp_pitch = mirpitch(temp_a);
-            %temp_rms = mirrms(temp_a);
-            %temp_rolloff = mirrolloff(temp_a);
-            %temp_time = mirtempo(temp_a);
+            temp_pitch = mirpitch(temp_a);
+            temp_time = mirtempo(temp_a);
+            temp_peaks = mirpeaks(temp_a);
+            temp_onset = mironsets(temp_a,'Filterbank',Nch);
     
  % avere i dati a 44100 è troppo pesante come numero di campioni per il browser da gestire come
  % numero di campioni, quindi sottocampiono a 60.
+ 
+            
             temp_env = mirenvelope(temp_a,'Sampling',Fs);
-    
-            temp_a = miraudio(temp_a,'Sampling',FsFb);
             temp_fb = mirfilterbank(temp_a,'NbChannels',Nch);
-    
-            %temp_spec = mirspectrum(temp_a,'Min',20,'Max',18000);
-            %temp_peaks = mirpeaks(temp_a);
-            %temp_onset = mironsets(temp_a);
-    
+            temp_spec = mirspectrum(temp_fb);
+            
+            
+            
 %% Get Data
 % per ottenere i dati salvati negli oggetti mirtoolbox devo usare o
 % mirgetdata che mi estrae direttamente tutto in un array o get che estrae
@@ -93,22 +92,29 @@ for directory = folders
             env_norm = mirgetdata(temp_env);
             env_norm = round(env_norm/max(abs(env_norm)),4);
 
-% uso scala logaritmica altrimenti son troppo piccoli
-            clear('fb_norm');
-            fb_anorm = mirgetdata(temp_fb);
-            fb_norm(:,:) = fb_anorm(:,1,:);
+% forse non ha senso quello che faccio?
+         %   clear('fb_norm');
+         %   fb_anorm = mirgetdata(temp_fb);
+         %   fb_norm(:,:) = fb_anorm(:,1,:);
             
-            fb_norm = abs(fb_norm);
-            fb_max = max(max(fb_norm));
-            fb_norm(:) = round(fb_norm(:)./fb_max,4);
-           
+         %   fb_norm = abs(fb_norm);
+         %   fb_max = max(max(fb_norm));
+         %  fb_norm(:) = round(fb_norm(:)./fb_max,4);
             
-            %fb_max = max(max(abs(fb_norm)));
-            %fb_n = min(min(fb_norm))/fb_max;
-            %fb_norm(:) = round((round(fb_norm(:)./fb_max,4)-fb_n)/2,4);
-           
-            temp_s = struct('title', get(temp_a,'Label'),'Fs',Fs,'env',env_norm,'FsFb',FsFb,'Nch',Nch,'filterbank',fb_norm);
-            %temp_name = sprintf('%s.json', tracks(nFile,:));
+            pitch = mirgetdata(temp_pitch);
+            tempo = mirgetdata(temp_time);
+            onset = mirgetdata(temp_onset); % vettore con le posizioni degli onset temporalmente
+            peaks = mirgetdata(temp_peaks);
+            a_spec = mirgetdata(temp_spec);
+            
+            spec(:,:) = a_spec(:,1,:);
+            
+            spec_max = max(max(spec));
+            spec_norm(:) = round(spec(:)./spec_max,4);
+            % sottocampiono brutalmente?
+            
+             
+            temp_s = struct('title', get(temp_a,'Label'),'Folder',directory{1},'Fs',Fs,'pitch',pitch,'tempo',tempo,'Nch',Nch,'peaks',peaks,'onset',onset,'env',env_norm,'spectrum',spec_norm);
             temp_name = sprintf('%s.json', tracks(nFile).title);
             
             cd('../');
