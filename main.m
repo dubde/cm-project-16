@@ -61,7 +61,6 @@ for directory = folders
     
             temp_pitch = mirpitch(temp_a);
             temp_time = mirtempo(temp_a);
-            temp_peaks = mirpeaks(temp_a);
             temp_onset = mironsets(temp_a,'Filterbank',Nch);
     
  % avere i dati a 44100 è troppo pesante come numero di campioni per il browser da gestire come
@@ -69,8 +68,9 @@ for directory = folders
  
             
             temp_env = mirenvelope(temp_a,'Sampling',Fs);
+            temp_peaks = mirpeaks(temp_env);
             temp_fb = mirfilterbank(temp_a,'NbChannels',Nch);
-            temp_spec = mirspectrum(temp_fb);
+            temp_fbenv = mirenvelope(temp_fb,'Sampling',FsFb);
             
             
             
@@ -92,29 +92,32 @@ for directory = folders
             env_norm = mirgetdata(temp_env);
             env_norm = round(env_norm/max(abs(env_norm)),4);
 
-% forse non ha senso quello che faccio?
-         %   clear('fb_norm');
-         %   fb_anorm = mirgetdata(temp_fb);
-         %   fb_norm(:,:) = fb_anorm(:,1,:);
-            
-         %   fb_norm = abs(fb_norm);
-         %   fb_max = max(max(fb_norm));
-         %  fb_norm(:) = round(fb_norm(:)./fb_max,4);
-            
+% Normalizzo ogni canale così da avere una rappresentazione visibile
+            clear('fb_norm');
+            fb_anorm = mirgetdata(temp_fbenv);
+            fb_norm(:,:) = fb_anorm(:,1,:);
+            for i = 1:Nch
+                fb_max = max(fb_norm(:,i));
+                fb_norm(:,i) = round(fb_norm(:,i)./fb_max,4);
+            end
+% Normalizzo il pitch in un intervallo tra 0 e 255 così che sia comodo per
+% andare a gestire i valori dei colori. Normalizzo in base 440hz
             pitch = mirgetdata(temp_pitch);
+            while(pitch > 440) 
+                pitch = pitch - 440;
+            end
+            pitch = round((pitch/440)*255);
+            
             tempo = mirgetdata(temp_time);
-            onset = mirgetdata(temp_onset); % vettore con le posizioni degli onset temporalmente
-            peaks = mirgetdata(temp_peaks);
-            a_spec = mirgetdata(temp_spec);
+% Cerco l'indice di campione
+            onset = mirgetdata(temp_onset); % vettore con le posizioni temporali degli onset
+            onset = round(onset * Fs);
             
-            spec(:,:) = a_spec(:,1,:);
+            peaks = mirgetdata(temp_peaks,'PeakPos');
+            peaks = round(peaks * Fs);
             
-            spec_max = max(max(spec));
-            spec_norm(:) = round(spec(:)./spec_max,4);
-            % sottocampiono brutalmente?
-            
-             
-            temp_s = struct('title', get(temp_a,'Label'),'Folder',directory{1},'Fs',Fs,'pitch',pitch,'tempo',tempo,'Nch',Nch,'peaks',peaks,'onset',onset,'env',env_norm,'spectrum',spec_norm);
+% Salvo nella struttura dati tutto l'utile.
+            temp_s = struct('title', get(temp_a,'Label'),'Folder',directory{1},'Fs',Fs,'FsFb',FsFb,'pitch',pitch,'tempo',tempo,'Nch',Nch,'peaks',peaks,'onset',onset,'env',env_norm,'filterbank',fb_norm);
             temp_name = sprintf('%s.json', tracks(nFile).title);
             
             cd('../');

@@ -49,7 +49,7 @@ persVisualizer.prototype.initRenderer = function(){
 	this.renderer.setSize(canvas.width,canvas.height);
 	this.renderer.setClearColor(this.scene.fog.color,1);
 	this.renderer.domElement.style.position = "absolute";
-	this.renderer.domElement.style.left = '6px'; // correzione da sistemare a seconda del browser
+	this.renderer.domElement.style.left = '9px'; // correzione da sistemare a seconda del browser
 	this.renderer.domElement.style.zIndex = "-1";
 	canvas.parentNode.appendChild(this.renderer.domElement, canvas);
 	
@@ -77,12 +77,13 @@ persVisualizer.prototype.initialize = function() {
 persVisualizer.prototype.createGeometry = function() {
 	// creazione degli elementi rappresentati.
 		
-	this.floorGeometry = new THREE.PlaneGeometry(70, 60, 20, 20);
+	this.floorGeometry = new THREE.PlaneGeometry(70, 4*raggio, 20, 20);
 	this.floorMaterial = new THREE.MeshPhongMaterial({ color: 0x66ffff, side: THREE.DoubleSide });
 	this.floorMaterial.opacity = 0.8 ;
 	this.floorMaterial.transparent = true;
 	this.floor = new THREE.Mesh(this.floorGeometry, this.floorMaterial);
-	this.floor.rotation.x = Math.PI / -2;
+	this.floor.rotation.x = Math.PI / 12 + Math.PI / -2;
+	this.floor.position.z += -raggio/2;
 	// primo round?
 	
 	this.scene.add(this.floor);
@@ -399,7 +400,7 @@ function visualize() {
 			var valore = parseFloat(track.env[sampleEnvNow]);
 			for(var i = 0; i < 21; i++)
 			{
-				visualizer.floorGeometry.vertices[i].z = valore;
+				visualizer.floorGeometry.vertices[i].z = 2*valore;
 			}
 			for(var i = visualizer.floorGeometry.vertices.length-1 ; i > 20; i--)
 			{
