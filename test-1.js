@@ -12,6 +12,7 @@ function rappresentazioni(tracks){
 	visualizer = new persVisualizer();
 	var WIDTH = canvas.width;
 	var HEIGHT = canvas.height;	
+	var raggio;
 //	Variabili Audio per riproduzione e Analisi
 	
 	var audio = document.getElementById("audio");
@@ -24,15 +25,11 @@ function rappresentazioni(tracks){
 	var runAnim = false;
 	var isPlay = false;
 
-//	Controlli del mousemove
-	var mouseX = 0;
-	var mouseY = 0;
-
 //	Dati Traccia Statici 
 	var trackId = 0;
 	var trackLength = 0;
 	var track;
-	
+	var folder;
 	
 function persVisualizer(){
 	this.schene;
@@ -41,11 +38,10 @@ function persVisualizer(){
 	this.controls;
 	this.barreX = new Array();
 	this.barreY = new Array();
-	this.luci = new Array();
 	this.floorGeometry;
 	this.floorMaterial
 	this.floor;
-	this.materiale;
+
 }
 
 persVisualizer.prototype.initRenderer = function(){
@@ -62,18 +58,18 @@ persVisualizer.prototype.initRenderer = function(){
 persVisualizer.prototype.initialize = function() {
 	
 	this.scene = new THREE.Scene();
-	this.scene.fog = new THREE.Fog( 0x3f3f3f, 1,45); 
-	
+	this.scene.fog = new THREE.Fog( 0x3f3f3f, 1,145); 
+	raggio = 8*chCount/10;
 	this.camera = new THREE.PerspectiveCamera(45, WIDTH / HEIGHT, 0.1, 1000); //FOV, a/r, near,far
-	this.camera.position.set(0, 2, 8*chCount/10);
+	this.camera.position.set(0, 2, 2+raggio); //
 	this.camera.lookAt( this.scene.position );
 	
 //	this.scene.add(this.camera);
-	/*	
+	
 	var light = new THREE.PointLight(0xffff00);
-	light.position.set(0, 10, -5);
+	light.position.set(-20, 1, -10);
 	this.scene.add(light);
-	*/
+	
 	var light = new THREE.AmbientLight(0xffffff);
 	this.scene.add(light);
 };
@@ -81,7 +77,7 @@ persVisualizer.prototype.initialize = function() {
 persVisualizer.prototype.createGeometry = function() {
 	// creazione degli elementi rappresentati.
 		
-	this.floorGeometry = new THREE.PlaneGeometry(70, 60, chCount/8, 1);
+	this.floorGeometry = new THREE.PlaneGeometry(70, 60, 20, 20);
 	this.floorMaterial = new THREE.MeshPhongMaterial({ color: 0x66ffff, side: THREE.DoubleSide });
 	this.floorMaterial.opacity = 0.8 ;
 	this.floorMaterial.transparent = true;
@@ -97,7 +93,7 @@ persVisualizer.prototype.createGeometry = function() {
 	{
 		var barra = new THREE.BoxGeometry(1, 0.5, 0.1);
 		
-		materiale = new THREE.MeshPhongMaterial({
+		var materiale = new THREE.MeshPhongMaterial({
 			color: 0xff6699,
 			specular: 0xffffff
 		});
@@ -109,39 +105,17 @@ persVisualizer.prototype.createGeometry = function() {
 		this.barreY[i].position.set( i+0.5, 0, 0);
 		this.scene.add(this.barreY[i]);
 		
-		// light associata
-		this.luci[i] = new THREE.PointLight(0xff00ff,0xffff00, 4, 2,1);
-		this.luci[i].position.set( -i-0.5, 1, 2);
-		this.scene.add(this.luci[i]);
-		
-		this.luci[chCount + i] = new THREE.PointLight(0xffff00, 4, 2,1);
-		this.luci[chCount + i].position.set( i+0.5, 1, 2);
-		this.scene.add(this.luci[chCount + i]);
 	}
 };
 
-/*
-function onDocumentMouseMove(event){
-	mouseX = event.clientX - WIDTH/2;
-	mouseY = event.clientY - HEIGHT/2;
-}
-
-/*
-function waveupdate(sample){
-	for(var i = 0; i < visualizer.floorGeometry.vertices.length; i++)
-	{
-		var v = visualizer.floorGeometry.vertices[i];
-		v.z 
-	}
-}
-*/
 	init();
 
 function init(){	
 	
 //  Lettura dati estratti delle Tracce 
 	songs();
-	
+//	Colori valutati in base alle features di Pitch
+	//colorset();
 //	Inizializzazione Elementi 3D 
 	visualizer.initialize();
 	visualizer.createGeometry();
@@ -152,9 +126,19 @@ function init(){
 
 //	Sistema di controllo start/stop
 	control();
-	//document.addEventListener('mousemove', onDocumentMouseMove, false);
+	//document.addEventListener('mousemove', onMouseMove, false);
 }
+/*
+function onMouseMove(event){
+				var movementX = event.movementX || event.mozMovementX || event.webkitMovementX || 0;
+				var movementY = event.movementY || event.mozMovementY || event.webkitMovementY || 0;
+				
+				visualizer.camera.position.x += 0.01 * movementX ; 
+				if (visualizer.camera.position.x > raggio) visualizer.camera.position.x = raggio;
+				if (visualizer.camera.position.x < -raggio) visualizer.camera.position.x = -raggio;
 
+				visualizer.camera.lookAt( visualizer.scene.position);
+}*/
 //	Controlli di traccia (start/stop/select)
 function control() {
 	
@@ -386,20 +370,20 @@ function visualize() {
 			
 			var timeNow = (Math.trunc(audio.currentTime*100))/100;
 		//	Campione di finestra attuale:
-			var nVert = visualizer.floorGeometry.vertices.lentgh;
 			var sampleFbNow = Math.round(timeNow * FsFb);
-			var sampleEnvNow = Math.round(timeNow * nVert);
+			var sampleEnvNow = Math.round(timeNow * Fs);
 			
 			// rotazione della camera attorno all'origine
-			if(isPlay){
-			//	visualizer.camera.position.x += (mouseX - visualizer.camera.x) * 10;
-			//	visualizer.camera.position.z += (mouseY - visualizer.camera.z) * 10;
-				visualizer.camera.position.x += 0.01*Math.cos(0.1*timeNow*Math.PI);
-				//visualizer.camera.position.z = 18 + 0.5*Math.sin(timeNow*Math.PI);
+			/*if(isPlay){
+			
+				visualizer.camera.position.z = raggio*Math.cos(0.1*timeNow*Math.PI);
 				visualizer.camera.lookAt( visualizer.scene.position);
-			}
-			
-			
+			}*/
+						
+			visualizer.floorGeometry.dynamic = true;
+			visualizer.floorGeometry.verticesNeedUpdate = true;
+			visualizer.floorGeometry.normalsNeedUpdate = true;
+			visualizer.floorGeometry.colorsNeedUpdate = true;
 			visualizer.renderer.render(visualizer.scene, visualizer.camera);
 	
 		// animazione in base ai dati
@@ -408,12 +392,21 @@ function visualize() {
 				var valore = 2 * parseFloat(track.filterbank[sampleFbNow][i]);
 				visualizer.barreX[i].scale.y = 10  * valore;
 				visualizer.barreY[i].scale.y = 10  * valore;
-				
-				visualizer.luci[i].power = 5* valore;
-				visualizer.luci[chCount + i].power = 5*valore;
-				
 			}
 			visualizer.floorMaterial.needsUpdate = true;
+		//	onda sul terreno
+			
+			var valore = parseFloat(track.env[sampleEnvNow]);
+			for(var i = 0; i < 21; i++)
+			{
+				visualizer.floorGeometry.vertices[i].z = valore;
+			}
+			for(var i = visualizer.floorGeometry.vertices.length-1 ; i > 20; i--)
+			{
+				visualizer.floorGeometry.vertices[i].z = visualizer.floorGeometry.vertices[i-21].z;
+			}
+			
+			
 		}
 	}
 	draw();
