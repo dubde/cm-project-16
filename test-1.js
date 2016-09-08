@@ -13,6 +13,7 @@ function rappresentazioni(tracks){
 	var WIDTH = canvas.width;
 	var HEIGHT = canvas.height;	
 	var raggio;
+	var color;
 //	Variabili Audio per riproduzione e Analisi
 	
 	var audio = document.getElementById("audio");
@@ -42,6 +43,7 @@ function persVisualizer(){
 	this.floorMaterial
 	this.floor;
 	this.suns = new Array();
+	this.ambient;
 	this.angle;
 }
 
@@ -92,15 +94,18 @@ persVisualizer.prototype.initialize = function() {
 	//this.scene.add(this.sunHelper);
 	
 	
-	var light = new THREE.AmbientLight(0xffffff, 0.5);
-	this.scene.add(light);
+	this.ambient = new THREE.AmbientLight(0xffff00, 0.5);
+	this.scene.add(this.ambient);
 };
 
 persVisualizer.prototype.createGeometry = function() {
 	// creazione degli elementi rappresentati.
 		
 	this.floorGeometry = new THREE.PlaneGeometry(70, 4*raggio, 20, 20);
-	this.floorMaterial = new THREE.MeshPhongMaterial({ color: 0x66ffff, side: THREE.DoubleSide });
+	this.floorMaterial = new THREE.MeshPhongMaterial({ 
+			color: 0x66ffff,
+			side: THREE.DoubleSide
+		});
 	this.floorMaterial.opacity = 0.8 ;
 	this.floorMaterial.transparent = true;
 	this.floor = new THREE.Mesh(this.floorGeometry, this.floorMaterial);
@@ -134,6 +139,25 @@ persVisualizer.prototype.createGeometry = function() {
 	}
 };
 
+persVisualizer.prototype.setColors = function() {
+	
+	for(var i = 0; i < this.suns.length; i++)
+	{
+		this.suns[i].color = 'hsl('+(30+i)+',100%,70%)';
+	}
+	
+	this.ambient.color = 'hsl('+(360+color)%360+',100%,95%)'
+	
+	this.floorGeometry.color = 'rgb('+color+','+255-color+','+color+')';
+	
+	for(var i = 0; i < chCount; i++)
+	{
+		this.barreX[i].color = 'rgb('+color+','+color-i+','+color+')';
+		this.barreY[i].color = 'rgb('+color-i+','+i+color+','+255-color+')';
+	}
+	
+};
+
 	init();
 
 function init(){	
@@ -146,6 +170,7 @@ function init(){
 	visualizer.initialize();
 	visualizer.createGeometry();
 	visualizer.initRenderer();
+	visualizer.setColors();
 //	Prima generazione grafica	
 	
 	visualize();
@@ -220,6 +245,7 @@ function control() {
 		startButton.innerHTML = 'Start';
 		// pulizia della schermata
 		window.cancelAnimationFrame(drawVisual);
+		visualizer.setColors();
 		visualize();
 		// Boolean for Stop Animatio
 		initAnim = true;
@@ -399,19 +425,18 @@ function visualize() {
 			var sampleFbNow = Math.round(timeNow * FsFb);
 			var sampleEnvNow = Math.round(timeNow * Fs);
 			
-			// rotazione della camera Leggero beccheggio all'onset
-			/*var err = 2;
-			for(var i = 0; i < track.onset.length; i++)
+			// Amplificazione della luce durante un picco
+			var err = 2;
+			for(var i = 0; i < track.peaks.length; i++)
 			{
 				
-				if( track.onset[i] <= sampleEnvNow + err || track.onset[i] >= sampleEnvNow - err && visualizer.camera.position.z >= 2*raggio )
+				if( track.peaks[i] <= sampleEnvNow + err || track.peaks[i] >= sampleEnvNow - err && visualizer.ambient.intensity <= 0.5 )
 				{
-				visualizer.camera.position.z = 2+raggio;
+				visualizer.ambient.intensity  = 1;
 				}
 			}		
-			if(isPlay) visualizer.camera.position.z += 0.1 ;	
-			visualizer.camera.lookAt( visualizer.scene.position);
-			*/
+			if(isPlay && visualizer.ambient.intensity > 0.5 ) visualizer.ambient.intensity  -= 0.01 ;	
+			
 			visualizer.floorGeometry.dynamic = true;
 			visualizer.floorGeometry.verticesNeedUpdate = true;
 			visualizer.floorGeometry.normalsNeedUpdate = true;
@@ -493,6 +518,7 @@ function selectSong(newTrack)
 	console.log
 	audio.load();
 	Fs = parseInt(track.Fs);
+	color = track.pitch;
 	trackLength = track.env.length / Fs;
 	chCount = parseInt(track.Nch);
 	FsFb = parseInt(track.FsFb);
