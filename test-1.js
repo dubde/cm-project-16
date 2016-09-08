@@ -41,7 +41,8 @@ function persVisualizer(){
 	this.floorGeometry;
 	this.floorMaterial
 	this.floor;
-
+	this.suns = new Array();
+	this.angle;
 }
 
 persVisualizer.prototype.initRenderer = function(){
@@ -51,6 +52,9 @@ persVisualizer.prototype.initRenderer = function(){
 	this.renderer.domElement.style.position = "absolute";
 	this.renderer.domElement.style.left = '9px'; // correzione da sistemare a seconda del browser
 	this.renderer.domElement.style.zIndex = "-1";
+	this.renderer.shadowMap.enabled = true;
+	this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+	
 	canvas.parentNode.appendChild(this.renderer.domElement, canvas);
 	
 };
@@ -65,12 +69,30 @@ persVisualizer.prototype.initialize = function() {
 	this.camera.lookAt( this.scene.position );
 	
 //	this.scene.add(this.camera);
+	for(var i = 0; i < 2; i++){
+		var sun = new THREE.PointLight(0xffff00);
+		sun.castShadow = true;
+		//this.sun.angle = Math.PI / 4;
+		sun.decay = 2;
+		sun.intensity = 2;
+		sun.distance = 2*raggio;
+		sun.lookAt( 0,2 , - 2+raggio );
+		sun.shadow.mapSize.width = 1024;
+		sun.shadow.mapSize.height = 1024;
+		sun.shadow.camera.near = 1;
+		sun.shadow.camera.far = 20;
+		sun.penumbra = 0.05;
+		this.suns[i] = sun;
+		this.suns[i].position.set( -chCount/2, 10, -1 );
+		this.scene.add(this.suns[i]);
+	}
+	this.suns[1].position.set( chCount/2,10,-1);
+	this.angle = 0;
+	//this.sunHelper = new THREE.SpotLightHelper( this.sun );
+	//this.scene.add(this.sunHelper);
 	
-	var light = new THREE.PointLight(0xffff00);
-	light.position.set(-20, 1, -10);
-	this.scene.add(light);
 	
-	var light = new THREE.AmbientLight(0xffffff);
+	var light = new THREE.AmbientLight(0xffffff, 0.5);
 	this.scene.add(light);
 };
 
@@ -84,7 +106,8 @@ persVisualizer.prototype.createGeometry = function() {
 	this.floor = new THREE.Mesh(this.floorGeometry, this.floorMaterial);
 	this.floor.rotation.x = Math.PI / 12 + Math.PI / -2;
 	this.floor.position.z += -raggio/2;
-	// primo round?
+	this.floor.receiveShadow = true;
+	
 	
 	this.scene.add(this.floor);
 	
@@ -92,7 +115,7 @@ persVisualizer.prototype.createGeometry = function() {
 	
 	for (var i = 0; i < chCount; i++)
 	{
-		var barra = new THREE.BoxGeometry(1, 0.5, 0.1);
+		var barra = new THREE.BoxGeometry(1, 0.5, 1);
 		
 		var materiale = new THREE.MeshPhongMaterial({
 			color: 0xff6699,
@@ -100,7 +123,9 @@ persVisualizer.prototype.createGeometry = function() {
 		});
 		this.barreX[i] = new THREE.Mesh(barra, materiale);
 		this.barreY[i] = new THREE.Mesh(barra, materiale);
-		
+		this.barreX[i].castShadow = true;
+		this.barreY[i].castShadow = true;
+				
 		this.barreX[i].position.set( -i-0.5, 0, 0);
 		this.scene.add(this.barreX[i]);
 		this.barreY[i].position.set( i+0.5, 0, 0);
@@ -374,13 +399,19 @@ function visualize() {
 			var sampleFbNow = Math.round(timeNow * FsFb);
 			var sampleEnvNow = Math.round(timeNow * Fs);
 			
-			// rotazione della camera attorno all'origine
-			/*if(isPlay){
+			// rotazione della camera Leggero beccheggio all'onset
+			var err = 2;
+			for(var i = 0; i < track.onset.length; i++)
+			{
+				
+				if( track.onset[i] <= sampleEnvNow + err || track.onset[i] >= sampleEnvNow - err && visualizer.camera.position.z >= 2*raggio )
+				{
+				visualizer.camera.position.z = 2+raggio;
+				}
+			}		
+			if(isPlay) visualizer.camera.position.z += 0.1 ;	
+			visualizer.camera.lookAt( visualizer.scene.position);
 			
-				visualizer.camera.position.z = raggio*Math.cos(0.1*timeNow*Math.PI);
-				visualizer.camera.lookAt( visualizer.scene.position);
-			}*/
-						
 			visualizer.floorGeometry.dynamic = true;
 			visualizer.floorGeometry.verticesNeedUpdate = true;
 			visualizer.floorGeometry.normalsNeedUpdate = true;
@@ -388,9 +419,14 @@ function visualize() {
 			visualizer.renderer.render(visualizer.scene, visualizer.camera);
 	
 		// animazione in base ai dati
-			for (var i = 0; i < chCount && isPlay; i++)
-			{
+			for (var i = 0; i < chCount ; i++)
+			{	
 				var valore = 2 * parseFloat(track.filterbank[sampleFbNow][i]);
+				
+				if(valore <= 0){
+					valore = 0.001;
+				}
+				
 				visualizer.barreX[i].scale.y = 10  * valore;
 				visualizer.barreY[i].scale.y = 10  * valore;
 			}
@@ -407,6 +443,17 @@ function visualize() {
 				visualizer.floorGeometry.vertices[i].z = visualizer.floorGeometry.vertices[i-21].z;
 			}
 			
+			
+			visualizer.angle += 0.05 * track.tempo / 120;
+			
+			for(var i = 0; i < visualizer.suns.length && isPlay; i++){
+				var sign = i%2 ? -1 : 1;
+				visualizer.suns[i].position.x = chCount*Math.cos( visualizer.angle ) ;
+				visualizer.suns[i].position.y = sign * raggio*Math.sin( visualizer.angle );
+				visualizer.suns[i].position.z = sign * chCount*Math.cos( visualizer.angle );
+			}
+			
+			//visualizer.sunHelper.update();
 			
 		}
 	}
