@@ -65,7 +65,7 @@ persVisualizer.prototype.initialize = function() {
 	this.scene.fog = new THREE.Fog( 0x3f3f3f, 1,145); 
 	raggio = 8*chCount/10;
 	this.camera = new THREE.PerspectiveCamera(45, WIDTH / HEIGHT, 0.1, 1000); //FOV, a/r, near,far
-	this.camera.position.set(0, 2, 2+raggio); //
+	this.camera.position.set(0, 2, 5+raggio); //
 	this.camera.lookAt( this.scene.position );
 	
 //	this.scene.add(this.camera);
@@ -400,7 +400,7 @@ function visualize() {
 			var sampleEnvNow = Math.round(timeNow * Fs);
 			
 			// rotazione della camera Leggero beccheggio all'onset
-			var err = 2;
+			/*var err = 2;
 			for(var i = 0; i < track.onset.length; i++)
 			{
 				
@@ -411,7 +411,7 @@ function visualize() {
 			}		
 			if(isPlay) visualizer.camera.position.z += 0.1 ;	
 			visualizer.camera.lookAt( visualizer.scene.position);
-			
+			*/
 			visualizer.floorGeometry.dynamic = true;
 			visualizer.floorGeometry.verticesNeedUpdate = true;
 			visualizer.floorGeometry.normalsNeedUpdate = true;
