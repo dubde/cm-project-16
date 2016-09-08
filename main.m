@@ -59,16 +59,14 @@ for directory = folders
 % pezzo.
     
     
-            temp_pitch = mirpitch(temp_a);
+            temp_pitch = mirpitch(temp_a,'Mono');
             temp_time = mirtempo(temp_a);
-            temp_onset = mironsets(temp_a,'Filterbank',Nch);
-    
+            
  % avere i dati a 44100 è troppo pesante come numero di campioni per il browser da gestire come
  % numero di campioni, quindi sottocampiono a 60.
  
-            
             temp_env = mirenvelope(temp_a,'Sampling',Fs);
-            temp_peaks = mirpeaks(temp_env);
+            temp_peaks = mirpeaks(temp_env,'NoBegin','NoEnd','Order','Abscissa');
             temp_fb = mirfilterbank(temp_a,'NbChannels',Nch);
             temp_fbenv = mirenvelope(temp_fb,'Sampling',FsFb);
             
@@ -103,21 +101,19 @@ for directory = folders
 % Normalizzo il pitch in un intervallo tra 0 e 255 così che sia comodo per
 % andare a gestire i valori dei colori. Normalizzo in base 440hz
             pitch = mirgetdata(temp_pitch);
+         
             while(pitch > 440) 
                 pitch = pitch - 440;
             end
             pitch = round((pitch/440)*255);
             
             tempo = mirgetdata(temp_time);
-% Cerco l'indice di campione
-            onset = mirgetdata(temp_onset); % vettore con le posizioni temporali degli onset
-            onset = round(onset * Fs);
-            
+% Cerco l'indice di campione            
             peaks = mirgetdata(temp_peaks,'PeakPos');
             peaks = round(peaks * Fs);
             
 % Salvo nella struttura dati tutto l'utile.
-            temp_s = struct('title', get(temp_a,'Label'),'Folder',directory{1},'Fs',Fs,'FsFb',FsFb,'pitch',pitch,'tempo',tempo,'Nch',Nch,'peaks',peaks,'onset',onset,'env',env_norm,'filterbank',fb_norm);
+            temp_s = struct('title', get(temp_a,'Label'),'Folder',directory{1},'Fs',Fs,'FsFb',FsFb,'pitch',pitch,'tempo',tempo,'Nch',Nch,'peaks',peaks,'env',env_norm,'filterbank',fb_norm);
             temp_name = sprintf('%s.json', tracks(nFile).title);
             
             cd('../');
