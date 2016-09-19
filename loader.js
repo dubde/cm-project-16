@@ -7,9 +7,6 @@
 		}
 	});
 
-
-//	Caricamento del file JSON di interesse
-//	
 	var loadJSON = "loader.json";
 	var nTracks = 1; // dataJSON.length
 	var Fs = 2048;
@@ -19,38 +16,26 @@
 	var trackList;
 	var tracksData = [];
 
+
+//	Caricamento del file JSON con le informazioni dei files da caricare
+//	
 $.getJSON( dirJSON + '/'+loadJSON, function(json){ loadJSON = json.tracks; 
-						console.log("success");})
+						/*console.log("success");*/})
 						.done(function() {
 							audioDir = loadJSON.dir;
 							nTracks = loadJSON.nTracks;
 							trackList = loadJSON.tracce;
 							console.log('files: '+nTracks+' audioDir: '+audioDir );
 							var probl = loadTrack(0);
-							if (probl < 0) console.log('error: '+probl);
+							if (probl < 0) console.log('errore: '+probl);
 						})
 						.fail(function(){
-							console.log("fallimento");
+							console.log("caricamento dei dati: fallito");
 						});
 						
+//	Caricamento delle tracce in memoria: dai dati nel loader.json carico le canzoni
+//	dalle corrispettive cartelle.
 
-/*
-var request = new XMLHttpRequest();
-request.overrideMimeType("applicatigon/json");
-request.open("GET", "http://localhost/cm-project-16/" + fileJSON, true);
-if( request.responseText == null) console.log("fail loading");
-request.onreadystatechange = function () {
-	console.log('rstate:'+request.readyState+' status:'+request.status);
-	if ( request.readyState == 4 && request.status == "200")
-	{
-		dataJSON = JSON.parse(request.responseText);
-		console.log("parsed: " + dataJSON.title);
-		nTracks = dataJSON.length;
-		console.log('file: '+ fileJSON +' tracce: ' + nTracks  + ' ');
-		init();
-	} 
-};
-request.send(null);*/
 function loadTrack(index){
 	if(index >= nTracks) {
 		rappresentazioni(tracksData);

@@ -40,57 +40,41 @@ for directory = folders
 %%      Inizio analisi per file
         for file = 1:length(files)
             nFile = nFile + 1;
-% per fixare il caricamento di nomi di diversa lunghezza devo pre caricare
-% tracks metti con 100 caratteri?
-            %tracks(nFile) = zeros(256,1);
-            %tracks(nFile,:) = sprintf('%s',files(file).name);
             tracks(nFile) = struct('title', files(file).name);
+            
             temp_a = miraudio(files(file).name,'Normal','Label',0);
 
 %% Informazioni da Estrarre
-% posso estrarre l'audiowave(miraudio), lo spettro (mirspectrum),
-% autocorrelazione (mirautocor), mirpeaks per i picchi (PeakPos indice nei
-% campioni dei picchi detettati), il valore di rms per scalare bene
-% (mirrms), mironsets mi dice gli attacchi dei colpi magari da usare con i
-% picchi per capire cassa/rullante effetti grafici. mirtempo(?),
-% mirzerocross(?), mirrolloff mi dice la frequenza massima sotto la quale
-% c'è il tot dell'energia, potrei usarla per discriminare eventi a
-% frequenze oltre l'utile. mirpitch mi da la frequenza di base di fondo del
-% pezzo.
-    
-    
+%   
+% Estraggo pitch e tempo con la frequenza di campionamento più alta in modo
+% da avere un risultato preciso.
             temp_pitch = mirpitch(temp_a,'Mono');
             temp_time = mirtempo(temp_a);
             
- % avere i dati a 44100 è troppo pesante come numero di campioni per il browser da gestire come
- % numero di campioni, quindi sottocampiono a 60.
+ % Per l'estrazione dei valori dell'envelope, picchi e filterbank, sotto
+ % campiono il segnale in ingresso così da avere meno valori in uscita.
+ % Questo per un problema di dimensioni dei file in uscita e gestione da
+ % parte del browser.
  
             temp_env = mirenvelope(temp_a,'Sampling',Fs);
-            temp_peaks = mirpeaks(temp_env,'NoBegin','NoEnd','Order','Abscissa');
+            temp_peaks = mirpeaks(temp_env,'NoBegin','NoEnd','Order','Amplitude','Total',20);
             temp_fb = mirfilterbank(temp_a,'NbChannels',Nch);
             temp_fbenv = mirenvelope(temp_fb,'Sampling',FsFb);
             
             
             
-%% Get Data
-% per ottenere i dati salvati negli oggetti mirtoolbox devo usare o
-% mirgetdata che mi estrae direttamente tutto in un array o get che estrae
-% i singoli elementi? Lo salvo in una struct temporanea.
-% Title = mi dice cos'è
-% Length = lunghezza in campioni?
-% Name = il nome del file
-% ave = mirgetdata();
+%% Get Data & Normalization
+% per ottenere i dati salvati negli oggetti mirtoolbox devo usare
+% mirgetdata.
+% Vado a normalizzare i valori attorno a 1, arrotondarli alle prime 4 cifre
+% significative. Potrei farlo anche da Javascript ma aggiungerebbe
+% complessità allo script, meglio farlo offline.
 
-% non mi servono tutti questi per il primo test, ogni test ha il suo JSON,
-% struttura più leggera.
-
-%% Normalization and Semplification
-% vado a normalizzare i valori attorno a 1, arrotondarli alle prime 4 cifre
-% significative.
+% Envelope
             env_norm = mirgetdata(temp_env);
             env_norm = round(env_norm/max(abs(env_norm)),4);
 
-% Normalizzo ogni canale così da avere una rappresentazione visibile
+% Filter Bank
             clear('fb_norm');
             fb_anorm = mirgetdata(temp_fbenv);
             fb_norm(:,:) = fb_anorm(:,1,:);
@@ -98,19 +82,23 @@ for directory = folders
                 fb_max = max(fb_norm(:,i));
                 fb_norm(:,i) = round(fb_norm(:,i)./fb_max,4);
             end
+            
+% Pitch          
 % Normalizzo il pitch in un intervallo tra 0 e 255 così che sia comodo per
 % andare a gestire i valori dei colori. Normalizzo in base 440hz
             pitch = mirgetdata(temp_pitch);
-         
+            pitch = mean(pitch); % se ho più pitch diversi ne ho uno medio
             while(pitch > 440) 
                 pitch = pitch - 440;
             end
             pitch = round((pitch/440)*255);
             
+% Tempo            
             tempo = mirgetdata(temp_time);
-% Cerco l'indice di campione            
-            peaks = mirgetdata(temp_peaks,'PeakPos');
-            peaks = round(peaks * Fs);
+            
+% Picchi
+% Salvo solo i picchi con una certa intensità sul totale
+            peaks = mirgetdata(temp_peaks);
             
 % Salvo nella struttura dati tutto l'utile.
             temp_s = struct('title', get(temp_a,'Label'),'Folder',directory{1},'Fs',Fs,'FsFb',FsFb,'pitch',pitch,'tempo',tempo,'Nch',Nch,'peaks',peaks,'env',env_norm,'filterbank',fb_norm);
@@ -126,6 +114,9 @@ for directory = folders
     cd('../');
 end
 
+%% Loader 
+% Ulteriore file che indirizza lo script verso i file json da caricare per
+% le tracce.
 
 cd('json');
 temp_load = struct('dir',directory,'nTracks',nFile,'tracce',tracks);
