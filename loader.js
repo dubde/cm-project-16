@@ -11,7 +11,6 @@
 	var nTracks = 1; // dataJSON.length
 	var Fs = 2048;
 	var chCount = 20;
-	var audioDir;
 	var dirJSON = "json";
 	var trackList;
 	var tracksData = [];
@@ -22,10 +21,9 @@
 $.getJSON( dirJSON + '/'+loadJSON, function(json){ loadJSON = json.tracks; 
 						/*console.log("success");*/})
 						.done(function() {
-							audioDir = loadJSON.dir;
 							nTracks = loadJSON.nTracks;
 							trackList = loadJSON.tracce;
-							console.log('files: '+nTracks+' audioDir: '+audioDir );
+							console.log('files: '+nTracks);
 							var probl = loadTrack(0);
 							if (probl < 0) console.log('errore: '+probl);
 						})
@@ -44,7 +42,7 @@ function loadTrack(index){
 	$.getJSON( dirJSON + '/'+trackList[index].title+'.json', function(json){ 
 						tracksData.push(json.track);})
 						.done(function() {
-							console.log('traccia '+index+': '+ tracksData[index].title );
+							console.log('traccia '+index+': '+ tracksData[index].title+' dir: '+  trackList[index].dir);
 							return loadTrack(index+1);
 						})
 						.fail(function(){

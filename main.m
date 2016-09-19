@@ -29,20 +29,20 @@ FsFb = 2048;
 Nch = 20;
 nFile = 0;
 
-folders = [{'tests'}];
+folders = [{'tests'},{'audio'}];
 formats = [{'*.wav'},{'*.mp3'}];
-%directory = 'audio';
+
 
 for directory = folders
     cd(directory{1});
     for type = formats;
     files = dir(type{1});
 %%      Inizio analisi per file
-        for file = 1:length(files)
+        for file = files'
             nFile = nFile + 1;
-            tracks(nFile) = struct('title', files(file).name);
+            tracks(nFile) = struct('title', file.name,'dir',directory{1});
             
-            temp_a = miraudio(files(file).name,'Normal','Label',0);
+            temp_a = miraudio(file.name,'Normal','Label',0);
 
 %% Informazioni da Estrarre
 %   
@@ -57,7 +57,7 @@ for directory = folders
  % parte del browser.
  
             temp_env = mirenvelope(temp_a,'Sampling',Fs);
-            temp_peaks = mirpeaks(temp_env,'NoBegin','NoEnd','Order','Amplitude','Total',20);
+ %          temp_peaks = mirpeaks(temp_env,'NoBegin','NoEnd','Order','Amplitude','Total',20);
             temp_fb = mirfilterbank(temp_a,'NbChannels',Nch);
             temp_fbenv = mirenvelope(temp_fb,'Sampling',FsFb);
             
@@ -96,13 +96,9 @@ for directory = folders
 % Tempo            
             tempo = mirgetdata(temp_time);
             
-% Picchi
-% Salvo solo i picchi con una certa intensità sul totale
-            peaks = mirgetdata(temp_peaks);
-            
 % Salvo nella struttura dati tutto l'utile.
-            temp_s = struct('title', get(temp_a,'Label'),'Folder',directory{1},'Fs',Fs,'FsFb',FsFb,'pitch',pitch,'tempo',tempo,'Nch',Nch,'peaks',peaks,'env',env_norm,'filterbank',fb_norm);
-            temp_name = sprintf('%s.json', tracks(nFile).title);
+            temp_s = struct('title', get(temp_a,'Label'),'Fs',Fs,'FsFb',FsFb,'pitch',pitch,'tempo',tempo,'Nch',Nch,'env',env_norm,'filterbank',fb_norm);
+            temp_name = sprintf('%s.json', file.name);
             
             cd('../');
             cd('json');
@@ -119,7 +115,7 @@ end
 % le tracce.
 
 cd('json');
-temp_load = struct('dir',directory,'nTracks',nFile,'tracce',tracks);
+temp_load = struct('nTracks',nFile,'tracce',tracks);
 savejson('tracks',temp_load,'loader.json');
 cd('../');
 disp('End of Analysis');

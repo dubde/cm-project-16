@@ -150,7 +150,6 @@ persVisualizer.prototype.createGeometry = function() {
 	for (var i = 0; i < chCount; i++)
 	{
 		var barra = new THREE.BoxGeometry(1, 0.5, 1);
-		console.log('g: '+G);
 		G = ((G-i)*(G-i))%255;
 		
 		var materiale = new THREE.MeshPhongMaterial({
@@ -519,8 +518,8 @@ function selectSong(newTrack)
 {
 	trackId = newTrack;
 	track = tracks[trackId];
-	audio.src = ''+audioDir+'/'+track.title;	
-	console.log
+	audio.src = ''+trackList[trackId].dir+'/'+trackList[trackId].title;	
+	console.log('dir:'+audio.src);
 	audio.load();
 	Fs = parseInt(track.Fs);
 	color = track.pitch;

@@ -1,22 +1,26 @@
 {
 	"tracks": {
-		"dir": "tests",
 		"nTracks": 5,
 		"tracce": [
 			{
-				"title": "test1.wav"
+				"title": "test1.wav",
+				"dir": "tests"
 			},
 			{
-				"title": "test2.wav"
+				"title": "test2.wav",
+				"dir": "tests"
 			},
 			{
-				"title": "test3.wav"
+				"title": "test3.wav",
+				"dir": "tests"
 			},
 			{
-				"title": "test4.wav"
+				"title": "test4.wav",
+				"dir": "tests"
 			},
 			{
-				"title": "test5.wav"
+				"title": "test5.wav",
+				"dir": "tests"
 			}
 		]
 	}
